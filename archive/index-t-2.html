@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rohanshu</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><polygon points=%2250,15 90,85 10,85%22 fill=%22none%22 stroke=%22%23111111%22 stroke-width=%226%22/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    /* LIGHT MODE (Default) */
+    :root { 
+      --bg: #ffffff; 
+      --ink: #111111; 
+      --ink-dim: #666666; 
+      --border: #eeeeee; 
+      --right-bg: #fafafa;
+    }
+
+    /* DARK MODE (Automatic) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e0d0b; 
+        --ink: #e8e2d6; 
+        --ink-dim: #7a7060; 
+        --border: #2a2820; 
+        --right-bg: #151410;
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+      transition: background 0.3s, color 0.3s; /* Smooth swap */
+    }
+
+    .wrapper {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      min-height: 100vh;
+    }
+
+    .left {
+      padding: 8% 8%;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+
+    .section { margin-bottom: 3rem; }
+    .meta-section { margin-top: auto; padding-top: 2rem; }
+
+    .label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: var(--ink-dim);
+      margin-bottom: 1.2rem;
+      display: block;
+    }
+
+    .name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(4rem, 8vw, 7rem);
+      font-weight: 600;
+      line-height: 0.85;
+      letter-spacing: -0.03em;
+    }
+
+    .vision-text {
+      font-size: 1.1rem;
+      color: var(--ink);
+      max-width: 45ch;
+      font-weight: 300;
+    }
+
+    .contact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+
+    .contact-item:hover { opacity: 0.6; }
+    .lucide { width: 18px; height: 18px; stroke-width: 1.5px; }
+
+    .right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--right-bg);
+    }
+
+    .blog-trigger {
+      text-align: center;
+      text-decoration: none;
+      color: var(--ink);
+      transition: opacity 0.2s;
+    }
+
+    .blog-trigger:hover { opacity: 0.6; }
+
+    .blog-url {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      font-weight: 400;
+      display: block;
+      margin-top: 0.5rem;
+    }
+
+    @media (max-width: 850px) {
+      .wrapper { grid-template-columns: 1fr; }
+      .left { border-right: none; border-bottom: 1px solid var(--border); padding: 15% 10%; min-height: 100vh; }
+      .right { padding: 100px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrapper">
+    <main class="left">
+      <section class="section">
+        <span class="label">Name</span>
+        <h1 class="name">Rohanshu</h1>
+      </section>
+
+      <section class="section">
+        <span class="label">Contact</span>
+        <div class="contact-list">
+          <a href="mailto:hello.rohanshu@gmail.com" class="contact-item">
+            <i data-lucide="mail"></i> hello.rohanshu@gmail.com
+          </a>
+          <a href="https://t.me/hello-rohanshu" target="_blank" class="contact-item">
+            <i data-lucide="send"></i> t.me/hello-rohanshu
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <span class="label">Vision</span>
+        <p class="vision-text">
+          Make the world work, for 100% of humanity, in the shortest possible time, through spontaneous cooperation, without ecological offense or the disadvantage of anyone.
+        </p>
+      </section>
+
+      <section class="meta-section">
+  <span class="label">Meta</span>
+  <div class="contact-list">
+    <a href="https://rohanshu.bearblog.dev/my-website/" class="contact-item" style="font-size: 0.8rem; color: var(--ink-dim);" target="_blank">
+      <i data-lucide="history" style="width: 14px; height: 14px;"></i> Changelog
+    </a>
+  </div>
+</section>
+    </main>
+
+    <aside class="right">
+      <a href="https://rohanshu.bearblog.dev" class="blog-trigger" target="_blank">
+        <span class="label">Blog</span>
+        <span class="blog-url">rohanshu.bearblog.dev &rarr;</span>
+      </a>
+    </aside>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

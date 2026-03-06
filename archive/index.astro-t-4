@@ -1,0 +1,265 @@
+---
+import { getCollection } from "astro:content";
+const projects = await getCollection("projects");
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rohanshu</title>
+
+        <script is:inline>
+            (function () {
+                const saved = localStorage.getItem("theme-preference");
+                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                if (saved === "dark" || (!saved && prefersDark)) {
+                    document.documentElement.classList.add("dark-mode");
+                }
+            })();
+        </script>
+
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><polygon points=%2250,15 90,85 10,85%22 fill=%22none%22 stroke=%22%23111111%22 stroke-width=%226%22/></svg>" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400&display=swap" rel="stylesheet" />
+        <script is:inline src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+
+        <style>
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+            :root {
+                --bg: #fbfbf9;
+                --ink: #2d2c2a;
+                --ink-dim: #737169;
+                --border: #e8e6e1;
+                --right-bg: #f2f0eb;
+            }
+
+            html.dark-mode {
+                --bg: #0e0d0b;
+                --ink: #e8e2d6;
+                --ink-dim: #7a7060;
+                --border: #2a2820;
+                --right-bg: #151410;
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--ink);
+                font-family: "Inter", sans-serif;
+                line-height: 1.6;
+                transition: background 0.4s ease, color 0.4s ease;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            .wrapper {
+                display: grid;
+                grid-template-columns: 1.2fr 0.8fr;
+                min-height: 100svh;
+            }
+
+            .left {
+                border-right: 1px solid var(--border);
+                position: relative;
+            }
+
+            .hero-fold {
+                height: 100svh;
+                padding: 0 8%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .hero-cluster {
+                display: flex;
+                flex-direction: column;
+                /* Margin-top sets the 23.6% starting point */
+                margin-top: max(60px, 23.6svh); 
+                flex-grow: 1; /* Allows the cluster to fill the fold to the bottom */
+            }
+
+            /* Dynamic Spacers: they grow equally to fill vertical space */
+            .spacer {
+                flex-grow: 1;
+                min-height: 2rem; /* Safety for small screens */
+            }
+
+            .scroll-content {
+                padding: 0 8% 8% 8%; 
+                display: flex;
+                flex-direction: column;
+            }
+
+            .theme-toggle {
+                background: none;
+                border: none;
+                cursor: pointer;
+                color: var(--ink-dim);
+                width: 24px;
+                height: 24px;
+                position: absolute;
+                top: 30px;
+                right: 30px;
+                z-index: 10;
+            }
+
+            #sun-icon { display: none; }
+            html.dark-mode #sun-icon { display: block; }
+            html.dark-mode #moon-icon { display: none; }
+
+            .label {
+                font-size: 0.65rem;
+                text-transform: uppercase;
+                letter-spacing: 0.25em;
+                color: var(--ink-dim);
+                margin-bottom: 0.8rem;
+                display: block;
+            }
+
+            .name {
+                font-family: "Cormorant Garamond", serif;
+                font-size: clamp(3.5rem, 8vw, 7rem);
+                font-weight: 600;
+                line-height: 0.8;
+                letter-spacing: -0.03em;
+            }
+
+            .vision-text {
+                font-size: 1.05rem;
+                max-width: 42ch;
+                font-weight: 300;
+            }
+
+            .contact-list { display: flex; flex-direction: column; gap: 0.6rem; }
+            .contact-item { display: flex; align-items: center; gap: 0.75rem; color: var(--ink); text-decoration: none; font-size: 0.95rem; }
+
+            .hex-grid { display: flex; flex-wrap: wrap; gap: 12px; max-width: 440px; }
+            .hex {
+                width: 90px; height: 100px;
+                background: var(--border);
+                display: flex; align-items: center; justify-content: center; text-align: center;
+                clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+                transition: all 0.3s ease;
+                text-decoration: none; padding: 10px;
+            }
+            .hex:hover { transform: translateY(-3px); background: var(--ink); }
+            .hex span { font-size: 0.65rem; color: var(--ink); }
+            .hex:hover span { color: var(--bg); }
+
+            .meta-section {
+                margin-top: 8rem;
+                padding-top: 2rem;
+                border-top: 1px solid var(--border);
+            }
+
+            .right {
+                background: var(--right-bg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: sticky;
+                top: 0;
+                height: 100svh;
+            }
+
+            .blog-trigger { text-align: center; text-decoration: none; color: var(--ink); }
+            .blog-url { font-family: "Cormorant Garamond", serif; font-size: clamp(1.5rem, 4vw, 2.2rem); display: block; }
+
+            @media (max-width: 850px) {
+                .wrapper { grid-template-columns: 1fr; }
+                .left { border-right: none; }
+                .hero-cluster { margin-top: max(40px, 15svh); }
+                .hero-fold { padding: 0 10% 0 10%; height: auto; min-height: 100svh; }
+                .spacer { flex-grow: 0; height: 3rem; } /* Static gaps for mobile scrolling */
+                .scroll-content { padding: 0 10% 10% 10%; }
+                .right { position: relative; height: auto; padding: 80px 20px; border-top: 1px solid var(--border); }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="wrapper">
+            <main class="left">
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                    <i data-lucide="sun" id="sun-icon"></i>
+                    <i data-lucide="moon" id="moon-icon"></i>
+                </button>
+
+                <div class="hero-fold">
+                    <div class="hero-cluster">
+                        <section>
+                            <span class="label">Name</span>
+                            <h1 class="name">Rohanshu</h1>
+                        </section>
+
+                        <div class="spacer"></div>
+
+                        <section>
+                            <span class="label">Contact</span>
+                            <div class="contact-list">
+                                <a href="mailto:hello.rohanshu@gmail.com" class="contact-item">
+                                    <i data-lucide="mail"></i> hello.rohanshu@gmail.com
+                                </a>
+                                <a href="https://t.me/hello-rohanshu" target="_blank" class="contact-item">
+                                    <i data-lucide="send"></i> t.me/hello-rohanshu
+                                </a>
+                            </div>
+                        </section>
+
+                        <div class="spacer"></div>
+
+                        <section>
+                            <span class="label">Vision</span>
+                            <p class="vision-text">
+                                Make the world work, for 100% of humanity, in the
+                                shortest possible time, through spontaneous cooperation,
+                                without ecological offense or the disadvantage of
+                                anyone.
+                            </p>
+                        </section>
+
+                        <div class="spacer"></div>
+                    </div>
+                </div>
+
+                <div class="scroll-content">
+                    <section>
+                        <span class="label">Projects</span>
+                        <div class="hex-grid">
+                            {projects.map((project: any) => (
+                                <a href={`/projects/${project.slug}`} class="hex">
+                                    <span>{project.data.title}</span>
+                                </a>
+                            ))}
+                        </div>
+                    </section>
+
+                    <section class="meta-section">
+                        <span class="label">Meta</span>
+                        <a href="https://rohanshu.bearblog.dev/my-website/" class="contact-item" style="font-size: 0.8rem; color: var(--ink-dim);" target="_blank">
+                            <i data-lucide="history" style="width: 14px; height: 14px;"></i> Changelog
+                        </a>
+                    </section>
+                </div>
+            </main>
+
+            <aside class="right">
+                <a href="https://rohanshu.bearblog.dev" class="blog-trigger" target="_blank">
+                    <span class="label">Blog</span>
+                    <span class="blog-url">rohanshu.bearblog.dev &rarr;</span>
+                </a>
+            </aside>
+        </div>
+
+        <script is:inline>
+            lucide.createIcons();
+            const themeToggle = document.getElementById("theme-toggle");
+            themeToggle.addEventListener("click", () => {
+                const isDark = document.documentElement.classList.toggle("dark-mode");
+                localStorage.setItem("theme-preference", isDark ? "dark" : "light");
+            });
+        </script>
+    </body>
+</html>
