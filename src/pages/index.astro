@@ -75,7 +75,7 @@ const projects = await getCollection("projects");
 
 			.wrapper {
 				display: grid;
-				grid-template-columns: 1.2fr 0.8fr;
+				grid-template-columns: 61.8fr 38.2fr;
 				min-height: 100svh;
 			}
 
@@ -141,27 +141,12 @@ const projects = await getCollection("projects");
 				display: block;
 			}
 
-			.name-container {
-				display: flex;
-				flex-direction: column;
-			}
-
 			.name {
 				font-family: "Cormorant Garamond", serif;
 				font-size: clamp(3.5rem, 8vw, 7rem);
 				font-weight: 600;
 				line-height: 0.8;
 				letter-spacing: -0.03em;
-			}
-
-			.last-name {
-				font-family: "Cormorant Garamond", serif;
-				font-size: clamp(1.1rem, 3.05vw, 2.65rem);
-				font-weight: 370.83;
-				color: var(--ink-dim);
-				margin-top: 0.5rem;
-				letter-spacing: 0.05em;
-
 			}
 
 			.vision-text {
@@ -184,20 +169,19 @@ const projects = await getCollection("projects");
 				font-size: 0.95rem;
 			}
 
+			/* --- ACTUAL HEXAGON GRID --- */
 			.hex-grid {
 				display: flex;
 				flex-wrap: wrap;
-				gap: 12px;
-				max-width: 440px;
+				gap: 10px;
+				max-width: 550px;
+				padding-top: 20px;
 			}
+
 			.hex {
-				width: 90px;
-				height: 100px;
-				background: var(--border);
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				text-align: center;
+				width: 150px;
+				height: 170px;
+				background-color: var(--border);
 				clip-path: polygon(
 					50% 0%,
 					100% 25%,
@@ -206,20 +190,60 @@ const projects = await getCollection("projects");
 					0% 75%,
 					0% 25%
 				);
-				transition: all 0.3s ease;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
 				text-decoration: none;
-				padding: 10px;
+				position: relative;
+				transition: transform 0.3s ease;
+				background-size: cover;
+				background-position: center;
+				margin-bottom: -20px; /* Slight nesting */
 			}
+
 			.hex:hover {
-				transform: translateY(-3px);
-				background: var(--ink);
+				transform: scale(1.05);
+				z-index: 5;
 			}
+
+			.hex-overlay {
+				position: absolute;
+				inset: 0;
+				background: var(--bg);
+				opacity: 0.85;
+				z-index: 1;
+				transition: opacity 0.3s ease;
+			}
+
+			.hex:hover .hex-overlay {
+				opacity: 0.7;
+			}
+
 			.hex span {
-				font-size: 0.65rem;
+				font-size: 0.75rem;
 				color: var(--ink);
+				z-index: 2;
+				font-weight: 600;
+				padding: 0 10px;
 			}
-			.hex:hover span {
-				color: var(--bg);
+
+			.status-tag {
+				position: absolute;
+				top: 35px;
+				font-size: 0.5rem;
+				text-transform: uppercase;
+				color: var(--ink-dim);
+				z-index: 2;
+				letter-spacing: 0.1em;
+			}
+
+			.hex-category {
+				font-size: 0.6rem;
+				color: var(--ink-dim);
+				z-index: 2;
+				margin-top: 5px;
 			}
 
 			.meta-section {
@@ -256,20 +280,12 @@ const projects = await getCollection("projects");
 				.left {
 					border-right: none;
 				}
-				.hero-cluster {
-					margin-top: max(40px, 15svh);
-				}
 				.hero-fold {
-					padding: 0 10% 0 10%;
 					height: auto;
 					min-height: 100svh;
 				}
-				.spacer {
-					flex-grow: 0;
-					height: 3rem;
-				}
 				.scroll-content {
-					padding: 0 10% 10% 10%;
+					padding-bottom: 40px;
 				}
 				.right {
 					position: relative;
@@ -298,11 +314,8 @@ const projects = await getCollection("projects");
 						<section class="name-container">
 							<span class="label">Name</span>
 							<h1 class="name">Rohanshu</h1>
-							<!-- <span class="last-name">Ilmulwar</span> -->
 						</section>
-
 						<div class="spacer"></div>
-
 						<section>
 							<span class="label">Contact</span>
 							<div class="contact-list">
@@ -321,9 +334,7 @@ const projects = await getCollection("projects");
 								</a>
 							</div>
 						</section>
-
 						<div class="spacer"></div>
-
 						<section>
 							<span class="label">Vision</span>
 							<p class="vision-text">
@@ -333,22 +344,43 @@ const projects = await getCollection("projects");
 								disadvantage of anyone.
 							</p>
 						</section>
-
 						<div class="spacer"></div>
 					</div>
 				</div>
 
 				<div class="scroll-content">
 					<section>
-						<span class="label">Projects</span>
+						<span class="label">Artifacts</span>
 						<div class="hex-grid">
 							{
 								projects.map((project: any) => (
 									<a
-										href={`/projects/${project.slug}`}
+										href={
+											project.data.link ||
+											`/projects/${project.slug}`
+										}
 										class="hex"
+										style={
+											project.data.banner
+												? `background-image: url('${project.data.banner}');`
+												: ""
+										}
 									>
+										<div class="hex-overlay" />
+
+										{project.data.status && (
+											<span class="status-tag">
+												{project.data.status}
+											</span>
+										)}
+
 										<span>{project.data.title}</span>
+
+										{project.data.category && (
+											<div class="hex-category">
+												{project.data.category}
+											</div>
+										)}
 									</a>
 								))
 							}
