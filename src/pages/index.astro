@@ -1,431 +1,444 @@
 ---
 import { getCollection } from "astro:content";
-const projects = await getCollection("projects");
+// ARTIFACTS SECTION: projects collection is fetched here for use in the commented-out hex-grid below.
+// When re-enabling the artifacts section, uncomment this line and the hex-grid JSX block.
+// const projects = await getCollection("projects");
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Rohanshu</title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rohanshu</title>
 
-		<script is:inline>
-			(function () {
-				const saved = localStorage.getItem("theme-preference");
-				const prefersDark = window.matchMedia(
-					"(prefers-color-scheme: dark)",
-				).matches;
-				if (saved === "dark" || (!saved && prefersDark)) {
-					document.documentElement.classList.add("dark-mode");
-				}
-			})();
-		</script>
+        <script is:inline>
+            (function () {
+                const saved = localStorage.getItem("theme-preference");
+                const prefersDark = window.matchMedia(
+                    "(prefers-color-scheme: dark)",
+                ).matches;
+                if (saved === "dark" || (!saved && prefersDark)) {
+                    document.documentElement.classList.add("dark-mode");
+                }
+            })();
+        </script>
 
-		<link
-			rel="icon"
-			href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><polygon points=%2250,15 90,85 10,85%22 fill=%22none%22 stroke=%22%23111111%22 stroke-width=%226%22/></svg>"
-		/>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400&display=swap"
-			rel="stylesheet"
-		/>
-		<script
-			is:inline
-			src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"
-		></script>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><polygon points=%2250,15 90,85 10,85%22 fill=%22none%22 stroke=%22%23111111%22 stroke-width=%226%22/></svg>"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400&display=swap"
+            rel="stylesheet"
+        />
+        <script
+            is:inline
+            src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"
+        ></script>
 
-		<style>
-			*,
-			*::before,
-			*::after {
-				box-sizing: border-box;
-				margin: 0;
-				padding: 0;
-			}
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-			:root {
-				--bg: #fbfbf9;
-				--ink: #2d2c2a;
-				--ink-dim: #737169;
-				--border: #e8e6e1;
-				--right-bg: #f2f0eb;
-			}
+            :root {
+                --bg: #fbfbf9;
+                --ink: #2d2c2a;
+                --ink-dim: #737169;
+                --border: #e8e6e1;
+                --right-bg: #f2f0eb;
+            }
 
-			html.dark-mode {
-				--bg: #0e0d0b;
-				--ink: #e8e2d6;
-				--ink-dim: #7a7060;
-				--border: #2a2820;
-				--right-bg: #151410;
-			}
+            html.dark-mode {
+                --bg: #0e0d0b;
+                --ink: #e8e2d6;
+                --ink-dim: #7a7060;
+                --border: #2a2820;
+                --right-bg: #151410;
+            }
 
-			body {
-				background: var(--bg);
-				color: var(--ink);
-				font-family: "Inter", sans-serif;
-				line-height: 1.6;
-				transition:
-					background 0.4s ease,
-					color 0.4s ease;
-				-webkit-font-smoothing: antialiased;
-			}
+            body {
+                background: var(--bg);
+                color: var(--ink);
+                font-family: "Inter", sans-serif;
+                line-height: 1.6;
+                transition:
+                    background 0.4s ease,
+                    color 0.4s ease;
+                -webkit-font-smoothing: antialiased;
+            }
 
-			.wrapper {
-				display: grid;
-				grid-template-columns: 61.8fr 38.2fr;
-				min-height: 100svh;
-			}
+            .wrapper {
+                display: grid;
+                grid-template-columns: 61.8fr 38.2fr;
+                min-height: 100svh;
+            }
 
-			.left {
-				border-right: 1px solid var(--border);
-				position: relative;
-			}
+            .left {
+                border-right: 1px solid var(--border);
+                position: relative;
+            }
 
-			.hero-fold {
-				height: 100svh;
-				padding: 0 8%;
-				display: flex;
-				flex-direction: column;
-			}
+            .hero-fold {
+                height: 100svh;
+                padding: 0 8%;
+                display: flex;
+                flex-direction: column;
+            }
 
-			.hero-cluster {
-				display: flex;
-				flex-direction: column;
-				margin-top: max(60px, 23.6svh);
-				flex-grow: 1;
-			}
+            .hero-cluster {
+                display: flex;
+                flex-direction: column;
+                margin-top: max(60px, 23.6svh);
+                flex-grow: 1;
+            }
 
-			.spacer {
-				flex-grow: 1;
-				min-height: 2rem;
-			}
+            .spacer {
+                flex-grow: 1;
+                min-height: 2rem;
+            }
 
-			.scroll-content {
-				padding: 0 8% 8% 8%;
-				display: flex;
-				flex-direction: column;
-			}
+            .scroll-content {
+                padding: 0 8% 8% 8%;
+                display: flex;
+                flex-direction: column;
+            }
 
-			.theme-toggle {
-				background: none;
-				border: none;
-				cursor: pointer;
-				color: var(--ink-dim);
-				width: 24px;
-				height: 24px;
-				position: absolute;
-				top: 30px;
-				right: 30px;
-				z-index: 10;
-			}
+            .theme-toggle {
+                background: none;
+                border: none;
+                cursor: pointer;
+                color: var(--ink-dim);
+                width: 24px;
+                height: 24px;
+                position: absolute;
+                top: 30px;
+                right: 30px;
+                z-index: 10;
+            }
 
-			#sun-icon {
-				display: none;
-			}
-			html.dark-mode #sun-icon {
-				display: block;
-			}
-			html.dark-mode #moon-icon {
-				display: none;
-			}
+            #sun-icon {
+                display: none;
+            }
+            html.dark-mode #sun-icon {
+                display: block;
+            }
+            html.dark-mode #moon-icon {
+                display: none;
+            }
 
-			.label {
-				font-size: 0.65rem;
-				text-transform: uppercase;
-				letter-spacing: 0.25em;
-				color: var(--ink-dim);
-				margin-bottom: 0.8rem;
-				display: block;
-			}
+            .label {
+                font-size: 0.65rem;
+                text-transform: uppercase;
+                letter-spacing: 0.25em;
+                color: var(--ink-dim);
+                margin-bottom: 0.8rem;
+                display: block;
+            }
 
-			.name {
-				font-family: "Cormorant Garamond", serif;
-				font-size: clamp(3.5rem, 8vw, 7rem);
-				font-weight: 600;
-				line-height: 0.8;
-				letter-spacing: -0.03em;
-			}
+            .name {
+                font-family: "Cormorant Garamond", serif;
+                font-size: clamp(3.5rem, 8vw, 7rem);
+                font-weight: 600;
+                line-height: 0.8;
+                letter-spacing: -0.03em;
+            }
 
-			.vision-text {
-				font-size: 1.05rem;
-				max-width: 42ch;
-				font-weight: 300;
-			}
+            .vision-text {
+                font-size: 1.05rem;
+                max-width: 42ch;
+                font-weight: 300;
+            }
 
-			.contact-list {
-				display: flex;
-				flex-direction: column;
-				gap: 0.6rem;
-			}
-			.contact-item {
-				display: flex;
-				align-items: center;
-				gap: 0.75rem;
-				color: var(--ink);
-				text-decoration: none;
-				font-size: 0.95rem;
-			}
+            .vision-read-more {
+                color: var(--ink-dim);
+                text-decoration: underline;
+                text-underline-offset: 2px;
+                font-size: inherit;
+                font-weight: inherit;
+            }
 
-			/* --- ACTUAL HEXAGON GRID --- */
-			.hex-grid {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 10px;
-				max-width: 550px;
-				padding-top: 20px;
-			}
+            .vision-read-more:hover {
+                color: var(--ink);
+            }
 
-			.hex {
-				width: 150px;
-				height: 170px;
-				background-color: var(--border);
-				clip-path: polygon(
-					50% 0%,
-					100% 25%,
-					100% 75%,
-					50% 100%,
-					0% 75%,
-					0% 25%
-				);
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				justify-content: center;
-				text-align: center;
-				text-decoration: none;
-				position: relative;
-				transition: transform 0.3s ease;
-				background-size: cover;
-				background-position: center;
-				margin-bottom: -20px; /* Slight nesting */
-			}
+            .contact-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+            }
+            .contact-item {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                color: var(--ink);
+                text-decoration: none;
+                font-size: 0.95rem;
+            }
 
-			.hex:hover {
-				transform: scale(1.05);
-				z-index: 5;
-			}
+            /* --- ARTIFACTS: hex-grid styles kept intact for when the section is re-enabled ---
+            .hex-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+                max-width: 550px;
+                padding-top: 20px;
+            }
 
-			.hex-overlay {
-				position: absolute;
-				inset: 0;
-				background: var(--bg);
-				opacity: 0.85;
-				z-index: 1;
-				transition: opacity 0.3s ease;
-			}
+            .hex {
+                aspect-ratio: 1 / 1;
+                background-color: var(--border);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                text-decoration: none;
+                position: relative;
+                transition: transform 0.3s ease;
+                background-size: cover;
+                background-position: center;
+            }
 
-			.hex:hover .hex-overlay {
-				opacity: 0.7;
-			}
+            .hex:hover {
+                transform: scale(1.02);
+                z-index: 5;
+            }
 
-			.hex span {
-				font-size: 0.75rem;
-				color: var(--ink);
-				z-index: 2;
-				font-weight: 600;
-				padding: 0 10px;
-			}
+            .hex-overlay {
+                position: absolute;
+                inset: 0;
+                background: var(--bg);
+                opacity: 0.85;
+                z-index: 1;
+                transition: opacity 0.3s ease;
+            }
 
-			.status-tag {
-				position: absolute;
-				top: 35px;
-				font-size: 0.5rem;
-				text-transform: uppercase;
-				color: var(--ink-dim);
-				z-index: 2;
-				letter-spacing: 0.1em;
-			}
+            .hex:hover .hex-overlay {
+                opacity: 0.7;
+            }
 
-			.hex-category {
-				font-size: 0.6rem;
-				color: var(--ink-dim);
-				z-index: 2;
-				margin-top: 5px;
-			}
+            .hex span {
+                font-size: 0.75rem;
+                color: var(--ink);
+                z-index: 2;
+                font-weight: 600;
+                padding: 0 10px;
+            }
 
-			.meta-section {
-				margin-top: 8rem;
-				padding-top: 2rem;
-				border-top: 1px solid var(--border);
-			}
+            .status-tag {
+                position: absolute;
+                top: 15px;
+                font-size: 0.5rem;
+                text-transform: uppercase;
+                color: var(--ink-dim);
+                z-index: 2;
+                letter-spacing: 0.1em;
+            }
 
-			.right {
-				background: var(--right-bg);
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				position: sticky;
-				top: 0;
-				height: 100svh;
-			}
+            .hex-category {
+                font-size: 0.6rem;
+                color: var(--ink-dim);
+                z-index: 2;
+                margin-top: 5px;
+            }
+            --- END ARTIFACTS STYLES --- */
 
-			.blog-trigger {
-				text-align: center;
-				text-decoration: none;
-				color: var(--ink);
-			}
-			.blog-url {
-				font-family: "Cormorant Garamond", serif;
-				font-size: clamp(1.5rem, 4vw, 2.2rem);
-				display: block;
-			}
+            .meta-section {
+                margin-top: 8rem;
+                padding-top: 2rem;
+                border-top: 1px solid var(--border);
+            }
 
-			@media (max-width: 850px) {
-				.wrapper {
-					grid-template-columns: 1fr;
-				}
-				.left {
-					border-right: none;
-				}
-				.hero-fold {
-					height: auto;
-					min-height: 100svh;
-				}
-				.scroll-content {
-					padding-bottom: 40px;
-				}
-				.right {
-					position: relative;
-					height: auto;
-					padding: 80px 20px;
-					border-top: 1px solid var(--border);
-				}
-			}
-		</style>
-	</head>
+            .right {
+                background: var(--right-bg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: sticky;
+                top: 0;
+                height: 100svh;
+            }
 
-	<body>
-		<div class="wrapper">
-			<main class="left">
-				<button
-					id="theme-toggle"
-					class="theme-toggle"
-					aria-label="Toggle theme"
-				>
-					<i data-lucide="sun" id="sun-icon"></i>
-					<i data-lucide="moon" id="moon-icon"></i>
-				</button>
+            .blog-trigger {
+                text-align: center;
+                text-decoration: none;
+                color: var(--ink);
+            }
+            .blog-url {
+                font-family: "Cormorant Garamond", serif;
+                font-size: clamp(1.5rem, 4vw, 2.2rem);
+                display: block;
+            }
 
-				<div class="hero-fold">
-					<div class="hero-cluster">
-						<section class="name-container">
-							<span class="label">Name</span>
-							<h1 class="name">Rohanshu</h1>
-						</section>
-						<div class="spacer"></div>
-						<section>
-							<span class="label">Contact</span>
-							<div class="contact-list">
-								<a
-									href="mailto:hello.rohanshu@gmail.com"
-									class="contact-item"
-								>
-									<i data-lucide="mail"></i> hello.rohanshu@gmail.com
-								</a>
-								<a
-									href="https://t.me/hello-rohanshu"
-									target="_blank"
-									class="contact-item"
-								>
-									<i data-lucide="send"></i> t.me/hello-rohanshu
-								</a>
-							</div>
-						</section>
-						<div class="spacer"></div>
-						<section>
-							<span class="label">Vision</span>
-							<p class="vision-text">
-								Make the world work, for 100% of humanity, in
-								the shortest possible time, through spontaneous
-								cooperation, without ecological offense or the
-								disadvantage of anyone.
-							</p>
-						</section>
-						<div class="spacer"></div>
-					</div>
-				</div>
+            @media (max-width: 850px) {
+                .wrapper {
+                    grid-template-columns: 1fr;
+                }
+                .left {
+                    border-right: none;
+                }
+                .hero-fold {
+                    height: auto;
+                    min-height: 100svh;
+                }
+                .scroll-content {
+                    padding-bottom: 40px;
+                }
+                .right {
+                    position: relative;
+                    height: auto;
+                    padding: 80px 20px;
+                    border-top: 1px solid var(--border);
+                }
+            }
+        </style>
+    </head>
 
-				<div class="scroll-content">
-					<section>
-						<span class="label">Artifacts</span>
-						<div class="hex-grid">
-							{
-								projects.map((project: any) => (
-									<a
-										href={
-											project.data.link ||
-											`/projects/${project.slug}`
-										}
-										class="hex"
-										style={
-											project.data.banner
-												? `background-image: url('${project.data.banner}');`
-												: ""
-										}
-									>
-										<div class="hex-overlay" />
+    <body>
+        <div class="wrapper">
+            <main class="left">
+                <button
+                    id="theme-toggle"
+                    class="theme-toggle"
+                    aria-label="Toggle theme"
+                >
+                    <i data-lucide="sun" id="sun-icon"></i>
+                    <i data-lucide="moon" id="moon-icon"></i>
+                </button>
 
-										{project.data.status && (
-											<span class="status-tag">
-												{project.data.status}
-											</span>
-										)}
+                <div class="hero-fold">
+                    <div class="hero-cluster">
+                        <section class="name-container">
+                            <span class="label">Name</span>
+                            <h1 class="name">Rohanshu</h1>
+                        </section>
+                        <div class="spacer"></div>
+                        <section>
+                            <span class="label">Contact</span>
+                            <div class="contact-list">
+                                <a
+                                    href="mailto:hello.rohanshu@gmail.com"
+                                    class="contact-item"
+                                >
+                                    <i data-lucide="mail"></i> hello.rohanshu@gmail.com
+                                </a>
+                                <a
+                                    href="https://t.me/hello-rohanshu"
+                                    target="_blank"
+                                    class="contact-item"
+                                >
+                                    <i data-lucide="send"></i> t.me/hello-rohanshu
+                                </a>
+                            </div>
+                        </section>
+                        <div class="spacer"></div>
+                        <section>
+                            <span class="label">Vision</span>
+                            <p class="vision-text">
+                                Make the world work, for 100% of humanity, in
+                                the shortest possible time, through spontaneous
+                                cooperation, without ecological offense or the
+                                disadvantage of anyone. <a href="/pages/life-framework.md" class="vision-read-more">read more</a>
+                            </p>
+                        </section>
+                        <div class="spacer"></div>
+                    </div>
+                </div>
 
-										<span>{project.data.title}</span>
+                <div class="scroll-content">
+                    <!-- ARTIFACTS SECTION: commented out temporarily. To re-enable:
+                         1. Uncomment the `const projects = await getCollection("projects")` line at the top of the frontmatter.
+                         2. Uncomment the hex-grid CSS block in <style> (labelled ARTIFACTS).
+                         3. Uncomment the <section> block below.
+                         The hex-grid displays project cards with banner images, status tags, and category labels.
+                    -->
+                    <!--
+                    <section>
+                        <span class="label">Artifacts</span>
+                        <div class="hex-grid">
+                            {
+                                projects.map((project: any) => (
+                                    <a
+                                        href={
+                                            project.data.link ||
+                                            `/projects/${project.slug}`
+                                        }
+                                        class="hex"
+                                        style={
+                                            project.data.banner
+                                                ? `background-image: url('${project.data.banner}');`
+                                                : ""
+                                        }
+                                    >
+                                        <div class="hex-overlay" />
 
-										{project.data.category && (
-											<div class="hex-category">
-												{project.data.category}
-											</div>
-										)}
-									</a>
-								))
-							}
-						</div>
-					</section>
+                                        {project.data.status && (
+                                            <span class="status-tag">
+                                                {project.data.status}
+                                            </span>
+                                        )}
 
-					<section class="meta-section">
-						<span class="label">Meta</span>
-						<a
-							href="https://rohanshu.bearblog.dev/my-website/"
-							class="contact-item"
-							style="font-size: 0.8rem; color: var(--ink-dim);"
-							target="_blank"
-						>
-							<i
-								data-lucide="history"
-								style="width: 14px; height: 14px;"></i> Changelog
-						</a>
-					</section>
-				</div>
-			</main>
+                                        <span>{project.data.title}</span>
 
-			<aside class="right">
-				<a
-					href="https://rohanshu.bearblog.dev"
-					class="blog-trigger"
-					target="_blank"
-				>
-					<span class="label">Blog</span>
-					<span class="blog-url">rohanshu.bearblog.dev &rarr;</span>
-				</a>
-			</aside>
-		</div>
+                                        {project.data.category && (
+                                            <div class="hex-category">
+                                                {project.data.category}
+                                            </div>
+                                        )}
+                                    </a>
+                                ))
+                            }
+                        </div>
+                    </section>
+                    -->
 
-		<script is:inline>
-			lucide.createIcons();
-			const themeToggle = document.getElementById("theme-toggle");
-			themeToggle.addEventListener("click", () => {
-				const isDark =
-					document.documentElement.classList.toggle("dark-mode");
-				localStorage.setItem(
-					"theme-preference",
-					isDark ? "dark" : "light",
-				);
-			});
-		</script>
-	</body>
+                    <section class="meta-section">
+                        <span class="label">Meta</span>
+                        <a
+                            href="https://rohanshu.bearblog.dev/my-website/"
+                            class="contact-item"
+                            style="font-size: 0.8rem; color: var(--ink-dim);"
+                            target="_blank"
+                        >
+                            <i
+                                data-lucide="history"
+                                style="width: 14px; height: 14px;"></i> Changelog
+                        </a>
+                    </section>
+                </div>
+            </main>
+
+            <aside class="right">
+                <a
+                    href="https://rohanshu.bearblog.dev"
+                    class="blog-trigger"
+                    target="_blank"
+                >
+                    <span class="label">Blog</span>
+                    <span class="blog-url">rohanshu.bearblog.dev &rarr;</span>
+                </a>
+            </aside>
+        </div>
+
+        <script is:inline>
+            lucide.createIcons();
+            const themeToggle = document.getElementById("theme-toggle");
+            themeToggle.addEventListener("click", () => {
+                const isDark =
+                    document.documentElement.classList.toggle("dark-mode");
+                localStorage.setItem(
+                    "theme-preference",
+                    isDark ? "dark" : "light",
+                );
+            });
+        </script>
+    </body>
 </html>
