@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Humanity's Expanding Cosmic Horizon</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8e6de;
+    --muted: #6b6962;
+    --accent: #5DCAA5;
+    --accent2: #EF9F27;
+    --blue: #378ADD;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px 16px;
+    gap: 16px;
+    min-height: 100%;
+  }
+
+  h1 {
+    font-family: 'DM Mono', monospace;
+    font-weight: 400;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .chart-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 260px;
+  }
+
+  .tooltip {
+    position: absolute;
+    background: var(--surface);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text);
+    max-width: 240px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .12s;
+    z-index: 10;
+    line-height: 1.55;
+  }
+
+  .tooltip.visible { opacity: 1; }
+
+  .tooltip-year {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+  }
+
+  .tooltip-label {
+    font-weight: 500;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .tooltip-ly {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    margin-bottom: 8px;
+  }
+
+  .tooltip-desc {
+    color: #9b9890;
+    font-size: 11.5px;
+  }
+
+  footer {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<h1>Humanity's known cosmic horizon — <span>~2600 years</span> of expansion</h1>
+
+<div class="chart-wrap">
+  <canvas id="chart"></canvas>
+  <div class="tooltip" id="tip">
+    <div class="tooltip-year" id="tip-year"></div>
+    <div class="tooltip-label" id="tip-label"></div>
+    <div class="tooltip-ly" id="tip-ly"></div>
+    <div class="tooltip-desc" id="tip-desc"></div>
+  </div>
+</div>
+
+<footer>hover dots · log scale · light-years</footer>
+
+<script>
+const milestones = [
+  { year: -600,        ly: 0.00001,      label: 'Ancient sky',           desc: 'Babylonians, Greeks — the cosmos is Earth at centre, stars a ceiling. No concept of distance.' },
+  { year: 1543,        ly: 0.00001,      label: 'Copernicus',            desc: 'Heliocentric model. Earth orbits the Sun — but the universe is still just our solar system.' },
+  { year: 1610,        ly: 0.00001,      label: 'Galileo',               desc: 'Telescope shows the Milky Way is made of stars. The universe is bigger than any map.' },
+  { year: 1718,        ly: 8,            label: 'Halley: stars move',    desc: 'Edmund Halley shows stars have proper motion — objects at vast distance, not a painted ceiling.' },
+  { year: 1838,        ly: 11,           label: 'First stellar distance',desc: 'Bessel measures parallax of 61 Cygni: ~11 light-years. Cosmic scale becomes real for the first time.' },
+  { year: 1918,        ly: 100000,       label: 'Shapley: Milky Way',    desc: 'Our galaxy measured at ~300,000 ly across. We are not at its centre.' },
+  { year: 1924,        ly: 900000,       label: 'Hubble: Andromeda',     desc: 'Andromeda is a separate galaxy 900,000 ly away. The Milky Way is one island in a sea of galaxies.' },
+  { year: 1929,        ly: 140000000,    label: 'Expanding universe',    desc: 'Hubble\'s law: galaxies are receding. The universe is expanding. Known radius ~140 million ly.' },
+  { year: 1990,        ly: 13000000000,  label: 'Hubble Space Telescope',desc: 'HST peers 13 billion light-years back in time. The observable universe snaps into focus.' },
+  { year: 2003,        ly: 46000000000,  label: 'WMAP',                  desc: 'Observable universe confirmed ~93 billion ly in diameter. Age: 13.7 billion years.' },
+  { year: 2022,        ly: 46500000000,  label: 'James Webb',            desc: 'JWST sees galaxies from 300–400 million years after the Big Bang. The deepest view yet.' },
+];
+
+function formatLY(v) {
+  if (v < 1) return '< 1 light-year';
+  if (v < 1000) return Math.round(v) + ' light-years';
+  if (v < 1e6) return (v/1000).toFixed(0) + ',000 ly';
+  if (v < 1e9) return (v/1e6).toFixed(0) + ' million ly';
+  return (v/1e9).toFixed(1) + ' billion ly';
+}
+
+function formatYear(y) {
+  return y < 0 ? Math.abs(y) + ' BCE' : String(y);
+}
+
+const xLabels = milestones.map(m => formatYear(m.year));
+
+const ctx = document.getElementById('chart').getContext('2d');
+
+const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+gradient.addColorStop(0, 'rgba(93,202,165,0.15)');
+gradient.addColorStop(1, 'rgba(93,202,165,0)');
+
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: xLabels,
+    datasets: [{
+      data: milestones.map(m => Math.log10(Math.max(m.ly, 0.00001))),
+      borderColor: '#5DCAA5',
+      borderWidth: 1.5,
+      pointBackgroundColor: milestones.map((m, i) => i === milestones.length - 1 ? '#EF9F27' : '#5DCAA5'),
+      pointBorderColor: 'transparent',
+      pointRadius: 6,
+      pointHoverRadius: 9,
+      tension: 0.3,
+      fill: { target: 'origin', above: gradient }
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'nearest', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: false },
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: '#4a4845',
+          font: { family: 'DM Mono', size: 10 },
+          maxRotation: 45,
+          autoSkip: false,
+        },
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        border: { color: 'rgba(255,255,255,0.04)' }
+      },
+      y: {
+        min: -5,
+        max: 12,
+        ticks: {
+          color: '#4a4845',
+          font: { family: 'DM Mono', size: 10 },
+          callback: v => {
+            const map = { '-5': '', '-4': '< 1 ly', '0': '1 ly', '2': '100 ly', '4': '10 kly', '6': '1 Mly', '8': '100 Mly', '10': '10 Bly', '11': '100 Bly' };
+            return map[String(Math.round(v))] ?? '';
+          }
+        },
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        border: { color: 'rgba(255,255,255,0.04)' }
+      }
+    },
+    onHover: (evt, elements) => {
+      const tip = document.getElementById('tip');
+      if (!elements.length) { tip.classList.remove('visible'); return; }
+      const i = elements[0].index;
+      const m = milestones[i];
+      document.getElementById('tip-year').textContent = formatYear(m.year);
+      document.getElementById('tip-label').textContent = m.label;
+      document.getElementById('tip-ly').textContent = formatLY(m.ly);
+      document.getElementById('tip-desc').textContent = m.desc;
+
+      const canvasRect = ctx.canvas.getBoundingClientRect();
+      const parentRect = ctx.canvas.parentElement.getBoundingClientRect();
+      let x = evt.x - parentRect.left + 14;
+      let y = evt.y - parentRect.top - 10;
+      if (x + 256 > parentRect.width) x = evt.x - parentRect.left - 256;
+      if (y < 0) y = 0;
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+      tip.classList.add('visible');
+    }
+  }
+});
+
+document.getElementById('chart').addEventListener('mouseleave', () => {
+  document.getElementById('tip').classList.remove('visible');
+});
+</script>
+</body>
+</html>
