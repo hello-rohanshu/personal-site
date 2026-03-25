@@ -13,7 +13,7 @@ interface Project {
   };
 }
 
-const { projects } = Astro.props as { projects: Project[] };
+const { projects = [] } = Astro.props as { projects: Project[] };
 
 const STATUS_ORDER: Record<string, number> = { live: 0, building: 1, paused: 2, planned: 3, archived: 4 };
 const STATUS_LABEL: Record<string, string> = { live: 'Live', building: 'Building', planned: 'Planned', paused: 'Paused', archived: 'Archived' };
@@ -30,92 +30,123 @@ const sorted = [...projects].sort((a, b) => {
   return sd !== 0 ? sd : a.data.title.localeCompare(b.data.title);
 });
 
-const displayUrl = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
 ---
 
-<div class="plist">
+<div class="ptable">
   {sorted.map((project) => {
     const statuses = normalizeStatus(project.data.status);
     const prime = primaryStatus(project.data.status);
+    const live = isLive(project.data.status);
 
     return (
       <div class={`prow prow--${prime}`}>
-        <div class="left">
-          {statuses.map((s) => (
-            <span class="status">
-              <span class={`dot dot-${s}`}></span>
-              {STATUS_LABEL[s]}
-            </span>
-          ))}
-          {project.data.eta && <span class="eta-tag">{project.data.eta}</span>}
-        </div>
-        <div class="right">
-          <span class="title">{project.data.title}</span>
-          {project.data.description && <span class="desc">{project.data.description}</span>}
-          {project.data.link && (
-            <a class="visit" href={project.data.link} target="_blank" rel="noopener noreferrer">
-              {displayUrl(project.data.link)} <span class="visit-arrow">↗</span>
-            </a>
+
+        <div class="col-status">
+          <div class="statuses">
+            {statuses.map((s) => (
+              <span class="status-item">
+                <span class={`dot dot--${s}`}></span>
+                <span class="status-label">{STATUS_LABEL[s]}</span>
+              </span>
+            ))}
+          </div>
+          {project.data.eta && (
+            <span class="eta">{project.data.eta}</span>
           )}
         </div>
+
+        <div class="col-name">
+          <span class="title">{project.data.title}</span>
+          {project.data.description && (
+            <span class="desc">{project.data.description}</span>
+          )}
+        </div>
+
+        <div class="col-action">
+          {project.data.link ? (
+            <a class="use-btn" href={project.data.link} target="_blank" rel="noopener noreferrer">
+              {live ? 'Use' : 'Explore'}&nbsp;&rarr;
+            </a>
+          ) : (
+            <span class="no-action">&mdash;</span>
+          )}
+        </div>
+
       </div>
     );
   })}
 </div>
 
 <style>
-  .plist { display: flex; flex-direction: column; }
+  .ptable {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border);
+  }
 
   .prow {
     display: grid;
-    grid-template-columns: 90px 1fr;
+    grid-template-columns: 120px 1fr 140px;
+    align-items: center;
     gap: 1.5rem;
-    padding: 1.15rem 0;
+    padding: 1.25rem 0;
     border-bottom: 1px solid var(--border);
-    color: var(--ink);
   }
-  .prow:first-child { border-top: 1px solid var(--border); }
 
-  .left {
+  .col-status {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    padding-top: 0.2rem;
+    gap: 0.4rem;
   }
 
-  
-  .status {
+  .statuses {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .status-item {
     display: flex;
     align-items: center;
     gap: 0.38rem;
-    font-size: 0.57rem;
+  }
+
+  .status-label {
+    font-size: 0.58rem;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     color: var(--ink-dim);
-    white-space: nowrap;
   }
 
-  .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-  .dot-live     { background: #4caf74; }
-  .dot-building { background: #d4a84b; }
-  .dot-paused   { background: var(--ink-dim); opacity: 0.4; }
-  .dot-planned  { background: var(--ink-dim); opacity: 0.2; }
-  .dot-archived { background: var(--border); }
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
 
-  .eta-tag {
-    display: inline-block;
-    margin-top: 0.25rem;
-    padding: 0.2rem 0.45rem;
-    border: 1px solid var(--border);
-    font-size: 0.72rem;
+  .dot--live     { background: #4caf74; }
+  .dot--building { background: #d4a84b; animation: pulse 2.2s ease-in-out infinite; }
+  .dot--paused   { background: var(--ink-dim); opacity: 0.35; }
+  .dot--planned  { background: var(--ink-dim); opacity: 0.18; }
+  .dot--archived { background: var(--border); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  .eta {
     font-family: "Cormorant Garamond", serif;
-    font-style: italic;
-    color: var(--ink-dim);
+
+    font-size: 0.75rem;
+    color: var(--ink);
     line-height: 1.4;
-    align-self: flex-start;
+    margin-top: 0.15rem;
   }
 
-  .right {
+  .col-name {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
@@ -123,38 +154,76 @@ const displayUrl = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$
 
   .title {
     font-family: "Cormorant Garamond", serif;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: 600;
-    line-height: 1.2;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+
+  .prow--paused .title,
+  .prow--planned .title,
+  .prow--archived .title {
+    color: var(--ink-dim);
   }
 
   .desc {
     font-size: 0.78rem;
     color: var(--ink-dim);
     line-height: 1.6;
-    max-width: 54ch;
+    max-width: 52ch;
   }
 
-  .visit {
+  .col-action {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .use-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    margin-top: 0.25rem;
-    font-size: 0.68rem;
-    color: var(--ink-dim);
+    justify-content: center;
+    width: 100%;
+    padding: 0.65rem 1.2rem;
+    background: var(--ink);
+    color: var(--bg, #fff);
+    font-family: "Cormorant Garamond", serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     text-decoration: none;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 1px;
-    align-self: flex-start;
-    transition: color 0.15s, border-color 0.15s;
+    border: 1px solid var(--ink);
+    transition: opacity 0.15s;
   }
-  .visit:hover { color: var(--ink); border-color: var(--ink-dim); }
 
-  .prow--paused .title,
-  .prow--planned .title,
-  .prow--archived .title { color: var(--ink-dim); }
+  .use-btn:hover {
+    opacity: 0.75;
+  }
 
-  @media (max-width: 500px) {
-    .prow { grid-template-columns: 70px 1fr; gap: 0.9rem; }
+  .no-action {
+    color: var(--border);
+    font-size: 0.9rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  @media (max-width: 560px) {
+    .prow {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      padding: 1.4rem 0;
+    }
+
+    .col-action {
+      justify-content: flex-start;
+    }
+
+    .use-btn {
+      width: auto;
+      padding: 0.6rem 2rem;
+    }
+
+    .no-action {
+      text-align: left;
+    }
   }
 </style>
