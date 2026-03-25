@@ -1,8 +1,7 @@
 ---
 import { getCollection } from "astro:content";
-// ARTIFACTS SECTION: projects collection is fetched here for use in the commented-out hex-grid below.
-// When re-enabling the artifacts section, uncomment this line and the hex-grid JSX block.
-// const projects = await getCollection("projects");
+const projects = await getCollection("projects");
+import ProjectsList from "./ProjectsList.astro";
 ---
 
 <!doctype html>
@@ -109,6 +108,7 @@ import { getCollection } from "astro:content";
                 padding: 0 8% 8% 8%;
                 display: flex;
                 flex-direction: column;
+                gap: 4rem;
             }
 
             .theme-toggle {
@@ -143,6 +143,31 @@ import { getCollection } from "astro:content";
                 display: block;
             }
 
+            .label-row {
+                display: flex;
+                align-items: baseline;
+                gap: 1rem;
+            }
+
+            .wip-tag {
+                font-size: 0.6rem;
+                letter-spacing: 0.08em;
+                font-family: "Inter", sans-serif;
+                color: #5c4a00;
+                background: rgba(255, 243, 176, 0.25);
+                border: 1px solid #e6d36a;
+                padding: 0.15rem 0.45rem;
+                border-radius: 3px;
+                line-height: 1;
+                transform: translateY(-1px);
+            }
+
+            html.dark-mode .wip-tag {
+                background: rgba(255, 243, 176, 0.12);
+                border-color: rgba(230, 211, 106, 0.4);
+                color: #b8a75a;
+            }
+
             .name {
                 font-family: "Cormorant Garamond", serif;
                 font-size: clamp(3.5rem, 8vw, 7rem);
@@ -161,8 +186,6 @@ import { getCollection } from "astro:content";
                 color: var(--ink-dim);
                 text-decoration: underline;
                 text-underline-offset: 2px;
-                font-size: inherit;
-                font-weight: inherit;
             }
 
             .vision-read-more:hover {
@@ -174,6 +197,7 @@ import { getCollection } from "astro:content";
                 flex-direction: column;
                 gap: 0.6rem;
             }
+
             .contact-item {
                 display: flex;
                 align-items: center;
@@ -183,79 +207,108 @@ import { getCollection } from "astro:content";
                 font-size: 0.95rem;
             }
 
-            /* --- ARTIFACTS: hex-grid styles kept intact for when the section is re-enabled ---
-            .hex-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                gap: 15px;
-                max-width: 550px;
-                padding-top: 20px;
-            }
+            /* ── Projects ── */
 
-            .hex {
-                aspect-ratio: 1 / 1;
-                background-color: var(--border);
+            .projects-grid {
                 display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                text-decoration: none;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .artifact-card {
                 position: relative;
-                transition: transform 0.3s ease;
-                background-size: cover;
-                background-position: center;
+                display: block;
+                width: 200px;
+                height: 200px;
+                border: 3px solid var(--border);
+                overflow: hidden;
+                text-decoration: none;
+                color: var(--ink);
+                transition: border-color 0.2s ease;
             }
 
-            .hex:hover {
-                transform: scale(1.02);
-                z-index: 5;
+            .artifact-card:hover {
+                border-color: var(--ink-dim);
             }
 
-            .hex-overlay {
+            .artifact-banner {
                 position: absolute;
                 inset: 0;
-                background: var(--bg);
-                opacity: 0.85;
-                z-index: 1;
-                transition: opacity 0.3s ease;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+                filter: grayscale(15%);
+                transition: filter 0.3s ease;
             }
 
-            .hex:hover .hex-overlay {
-                opacity: 0.7;
+            .artifact-card:hover .artifact-banner {
+                filter: grayscale(0%);
             }
 
-            .hex span {
-                font-size: 0.75rem;
-                color: var(--ink);
-                z-index: 2;
-                font-weight: 600;
-                padding: 0 10px;
-            }
-
-            .status-tag {
+            .artifact-placeholder {
                 position: absolute;
-                top: 15px;
-                font-size: 0.5rem;
-                text-transform: uppercase;
-                color: var(--ink-dim);
-                z-index: 2;
-                letter-spacing: 0.1em;
+                inset: 0;
+                background: var(--right-bg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
-            .hex-category {
-                font-size: 0.6rem;
-                color: var(--ink-dim);
-                z-index: 2;
-                margin-top: 5px;
+            .artifact-body {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 0.5rem 0.65rem 0.6rem;
+                background: var(--bg);
+                border-top: 3px solid var(--border);
+                transition: border-color 0.2s ease;
+                display: flex;
+                flex-direction: column;
+                gap: 0.15rem;
             }
-            --- END ARTIFACTS STYLES --- */
+
+            .artifact-card:hover .artifact-body {
+                border-color: var(--ink-dim);
+            }
+
+            .artifact-title {
+                font-family: "Cormorant Garamond", serif;
+                font-size: 1rem;
+                font-weight: 600;
+                line-height: 1.1;
+            }
+
+            .artifact-status {
+                font-size: 0.55rem;
+                text-transform: uppercase;
+                letter-spacing: 0.13em;
+                color: var(--ink-dim);
+            }
+
+            .artifact-link {
+                font-size: 0.55rem;
+                color: var(--ink-dim);
+                text-decoration: none;
+                letter-spacing: 0.05em;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .artifact-link:hover {
+                color: var(--ink);
+            }
+
+            /* ── Meta ── */
 
             .meta-section {
-                margin-top: 8rem;
                 padding-top: 2rem;
                 border-top: 1px solid var(--border);
             }
+
+            /* ── Right ── */
 
             .right {
                 background: var(--right-bg);
@@ -272,6 +325,7 @@ import { getCollection } from "astro:content";
                 text-decoration: none;
                 color: var(--ink);
             }
+
             .blog-url {
                 font-family: "Cormorant Garamond", serif;
                 font-size: clamp(1.5rem, 4vw, 2.2rem);
@@ -316,7 +370,7 @@ import { getCollection } from "astro:content";
 
                 <div class="hero-fold">
                     <div class="hero-cluster">
-                        <section class="name-container">
+                        <section>
                             <span class="label">Name</span>
                             <h1 class="name">Rohanshu</h1>
                         </section>
@@ -346,7 +400,10 @@ import { getCollection } from "astro:content";
                                 Make the world work, for 100% of humanity, in
                                 the shortest possible time, through spontaneous
                                 cooperation, without ecological offense or the
-                                disadvantage of anyone. <a href="/pages/life-framework" class="vision-read-more">read more</a>
+                                disadvantage of anyone. <a
+                                    href="/pages/life-framework"
+                                    class="vision-read-more">read more</a
+                                >
                             </p>
                         </section>
                         <div class="spacer"></div>
@@ -354,51 +411,13 @@ import { getCollection } from "astro:content";
                 </div>
 
                 <div class="scroll-content">
-                    <!-- ARTIFACTS SECTION: commented out temporarily. To re-enable:
-                         1. Uncomment the `const projects = await getCollection("projects")` line at the top of the frontmatter.
-                         2. Uncomment the hex-grid CSS block in <style> (labelled ARTIFACTS).
-                         3. Uncomment the <section> block below.
-                         The hex-grid displays project cards with banner images, status tags, and category labels.
-                    -->
-                    <!--
                     <section>
-                        <span class="label">Artifacts</span>
-                        <div class="hex-grid">
-                            {
-                                projects.map((project: any) => (
-                                    <a
-                                        href={
-                                            project.data.link ||
-                                            `/projects/${project.slug}`
-                                        }
-                                        class="hex"
-                                        style={
-                                            project.data.banner
-                                                ? `background-image: url('${project.data.banner}');`
-                                                : ""
-                                        }
-                                    >
-                                        <div class="hex-overlay" />
-
-                                        {project.data.status && (
-                                            <span class="status-tag">
-                                                {project.data.status}
-                                            </span>
-                                        )}
-
-                                        <span>{project.data.title}</span>
-
-                                        {project.data.category && (
-                                            <div class="hex-category">
-                                                {project.data.category}
-                                            </div>
-                                        )}
-                                    </a>
-                                ))
-                            }
+                        <div class="label-row">
+                            <span class="label">Projects</span>
+                            <span class="wip-tag">🚧 WIP</span>
                         </div>
+                        <ProjectsList projects={projects} />
                     </section>
-                    -->
 
                     <section class="meta-section">
                         <span class="label">Meta</span>

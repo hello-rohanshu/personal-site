@@ -1,13 +1,14 @@
 ---
-banner: "/synergetics-isle.png"
-title: "Synergetics Isle"
-status: "In Progress"
-tags: "Synergetics"
-link: "https://synergetics.pages.dev"
-description: "A modern version of Synergetics Online"
-role: "Creator"
-relative-scale: 10/10
-
+title: Synergetics Isle
+banner:
+status:
+  - live
+  - building
+tags:
+  - Synergetics
+link: https://synergetics.pages.dev
+description: A modern digital edition of Fuller's Synergetics.
+role: Initiator
+relative-scale: 10
+eta: Launching March 31st, hopefully
 ---
-
-:)

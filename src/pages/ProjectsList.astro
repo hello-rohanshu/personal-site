@@ -1,0 +1,160 @@
+---
+type StatusValue = 'live' | 'building' | 'planned' | 'paused' | 'archived';
+interface Project {
+  slug: string;
+  data: {
+    title: string;
+    description?: string;
+    status: StatusValue | StatusValue[];
+    eta?: string;
+    link?: string;
+    role?: string;
+    order?: number;
+  };
+}
+
+const { projects } = Astro.props as { projects: Project[] };
+
+const STATUS_ORDER: Record<string, number> = { live: 0, building: 1, paused: 2, planned: 3, archived: 4 };
+const STATUS_LABEL: Record<string, string> = { live: 'Live', building: 'Building', planned: 'Planned', paused: 'Paused', archived: 'Archived' };
+
+const normalizeStatus = (s: string | string[]) => Array.isArray(s) ? s : [s];
+const primaryStatus = (s: string | string[]) =>
+  normalizeStatus(s).reduce((best, cur) => STATUS_ORDER[cur] < STATUS_ORDER[best] ? cur : best);
+
+const sorted = [...projects].sort((a, b) => {
+  if (a.data.order != null && b.data.order != null) return a.data.order - b.data.order;
+  if (a.data.order != null) return -1;
+  if (b.data.order != null) return 1;
+  const sd = STATUS_ORDER[primaryStatus(a.data.status)] - STATUS_ORDER[primaryStatus(b.data.status)];
+  return sd !== 0 ? sd : a.data.title.localeCompare(b.data.title);
+});
+
+const displayUrl = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+---
+
+<div class="plist">
+  {sorted.map((project) => {
+    const statuses = normalizeStatus(project.data.status);
+    const prime = primaryStatus(project.data.status);
+
+    return (
+      <div class={`prow prow--${prime}`}>
+        <div class="left">
+          {statuses.map((s) => (
+            <span class="status">
+              <span class={`dot dot-${s}`}></span>
+              {STATUS_LABEL[s]}
+            </span>
+          ))}
+          {project.data.eta && <span class="eta-tag">{project.data.eta}</span>}
+        </div>
+        <div class="right">
+          <span class="title">{project.data.title}</span>
+          {project.data.description && <span class="desc">{project.data.description}</span>}
+          {project.data.link && (
+            <a class="visit" href={project.data.link} target="_blank" rel="noopener noreferrer">
+              {displayUrl(project.data.link)} <span class="visit-arrow">↗</span>
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  })}
+</div>
+
+<style>
+  .plist { display: flex; flex-direction: column; }
+
+  .prow {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 1.5rem;
+    padding: 1.15rem 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink);
+  }
+  .prow:first-child { border-top: 1px solid var(--border); }
+
+  .left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-top: 0.2rem;
+  }
+
+  
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 0.38rem;
+    font-size: 0.57rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-dim);
+    white-space: nowrap;
+  }
+
+  .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .dot-live     { background: #4caf74; }
+  .dot-building { background: #d4a84b; }
+  .dot-paused   { background: var(--ink-dim); opacity: 0.4; }
+  .dot-planned  { background: var(--ink-dim); opacity: 0.2; }
+  .dot-archived { background: var(--border); }
+
+  .eta-tag {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.2rem 0.45rem;
+    border: 1px solid var(--border);
+    font-size: 0.72rem;
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    color: var(--ink-dim);
+    line-height: 1.4;
+    align-self: flex-start;
+  }
+
+  .right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .title {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .desc {
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    max-width: 54ch;
+  }
+
+  .visit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.25rem;
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+    align-self: flex-start;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .visit:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+  .prow--paused .title,
+  .prow--planned .title,
+  .prow--archived .title { color: var(--ink-dim); }
+
+  @media (max-width: 500px) {
+    .prow { grid-template-columns: 70px 1fr; gap: 0.9rem; }
+  }
+</style>
