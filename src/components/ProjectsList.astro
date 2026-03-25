@@ -41,7 +41,8 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
 
     return (
       <div class={`prow prow--${prime}`}>
-
+        
+        {/* 1. Status (Smaller part of the remainder) */}
         <div class="col-status">
           <div class="statuses">
             {statuses.map((s) => (
@@ -56,6 +57,7 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
           )}
         </div>
 
+        {/* 2. Name and Description (Bigger part of the remainder) */}
         <div class="col-name">
           <span class="title">{project.data.title}</span>
           {project.data.description && (
@@ -63,6 +65,7 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
           )}
         </div>
 
+        {/* 3. Action (The 1fr tail) */}
         <div class="col-action">
           {project.data.link ? (
             <a class="use-btn" href={project.data.link} target="_blank" rel="noopener noreferrer">
@@ -85,12 +88,13 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
     border-top: 1px solid var(--border);
   }
 
-  .prow {
+.prow {
     display: grid;
-    grid-template-columns: 120px 1fr 140px;
+    /* Status (1) : Name (1.618) : Action (1.618) */
+    grid-template-columns: 1fr 2.618fr 1.618fr;
     align-items: center;
-    gap: 1.5rem;
-    padding: 1.25rem 0;
+    gap: 1.618rem;
+    padding: 1rem 0;
     border-bottom: 1px solid var(--border);
   }
 
@@ -139,7 +143,6 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
 
   .eta {
     font-family: "Cormorant Garamond", serif;
-
     font-size: 0.75rem;
     color: var(--ink);
     line-height: 1.4;
