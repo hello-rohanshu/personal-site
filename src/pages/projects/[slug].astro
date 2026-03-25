@@ -11,20 +11,132 @@ export async function getStaticPaths() {
 
 const { project } = Astro.props;
 const { Content } = await project.render();
+
+const STATUS_LABEL: Record<string, string> = { 
+  live: 'Live', building: 'Building', planned: 'Planned', paused: 'Paused', archived: 'Archived' 
+};
+
+const normalizeStatus = (s: string | string[]) => Array.isArray(s) ? s : [s];
+const statuses = normalizeStatus(project.data.status);
 ---
 
-<p>{project.slug}</p>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{project.data.title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>{project.data.title}</h1>
-  <p>{project.data.description}</p>
-  <p>Status: {project.data.status}</p>
-  <p>Category: {project.data.category}</p>
-  <Content />
-  <a href="/">← Back</a>
+  <main class="project-container">
+    <header class="project-header">
+      <div class="status-row">
+        {statuses.map((s) => (
+          <span class="status-item">
+            <span class={`dot dot--${s}`}></span>
+            <span class="status-label">{STATUS_LABEL[s]}</span>
+          </span>
+        ))}
+        {project.data.eta && <span class="eta">ETA: {project.data.eta}</span>}
+      </div>
+
+      <h1 class="title">{project.data.title}</h1>
+      
+      {project.data.description && <p class="desc">{project.data.description}</p>}
+      
+      {project.data.link && (
+        <a href={project.data.link} class="use-btn" target="_blank" rel="noopener noreferrer">
+          Visit Project &rarr;
+        </a>
+      )}
+    </header>
+
+    <div class="separator"></div>
+
+    <article class="prose">
+      <Content />
+    </article>
+
+    <footer class="project-footer">
+      <a href="/" class="back-link">← Back to projects</a>
+    </footer>
+  </main>
 </body>
 </html>
+
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-dim: #666;
+    --border: #e5e5e5;
+    --bg: #ffffff;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background-color: var(--bg);
+    margin: 0;
+    padding: 4rem 1.5rem;
+    line-height: 1.6;
+  }
+
+  .project-container {
+    max-width: 65ch;
+    margin: 0 auto;
+  }
+
+  .status-row { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem; }
+  .status-item { display: flex; align-items: center; gap: 0.4rem; }
+  .status-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-dim); }
+  
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .dot--live { background: #4caf74; }
+  .dot--building { background: #d4a84b; animation: pulse 2.2s ease-in-out infinite; }
+  .dot--paused { background: var(--ink-dim); opacity: 0.4; }
+  .dot--planned { background: var(--ink-dim); opacity: 0.2; }
+  .dot--archived { background: var(--border); }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .eta { font-family: "Cormorant Garamond", serif; font-size: 0.85rem; color: var(--ink-dim); }
+
+  .title { 
+    font-family: "Cormorant Garamond", serif; 
+    font-size: clamp(2.5rem, 8vw, 3.5rem); 
+    font-weight: 600; 
+    line-height: 1.1; 
+    margin: 0.5rem 0 1.5rem 0; 
+  }
+
+  .desc { font-size: 1.2rem; color: var(--ink-dim); margin-bottom: 2rem; max-width: 50ch; }
+
+  .use-btn {
+    display: inline-flex;
+    padding: 0.8rem 1.8rem;
+    background: var(--ink);
+    color: white;
+    text-decoration: none;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: 1px solid var(--ink);
+    transition: opacity 0.2s;
+  }
+
+  .use-btn:hover { opacity: 0.8; }
+
+  .separator { height: 1px; background: var(--border); margin: 3rem 0; }
+
+  /* Markdown Content Styling */
+  .prose :global(p) { margin-bottom: 1.5rem; font-size: 1.05rem; }
+  .prose :global(h2) { font-family: "Cormorant Garamond", serif; font-size: 2rem; margin-top: 2.5rem; }
+  .prose :global(a) { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+
+  .project-footer { margin-top: 5rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+  .back-link { color: var(--ink-dim); text-decoration: none; font-size: 0.95rem; }
+  .back-link:hover { color: var(--ink); text-decoration: underline; }
+</style>

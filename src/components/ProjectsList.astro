@@ -1,5 +1,5 @@
 ---
-type StatusValue = 'live' | 'building' | 'planned' | 'paused' | 'archived';
+type StatusValue = "live" | "building" | "planned" | "paused" | "archived";
 interface Project {
   slug: string;
   data: {
@@ -15,109 +15,157 @@ interface Project {
 
 const { projects = [] } = Astro.props as { projects: Project[] };
 
-const STATUS_ORDER: Record<string, number> = { live: 0, building: 1, paused: 2, planned: 3, archived: 4 };
-const STATUS_LABEL: Record<string, string> = { live: 'Live', building: 'Building', planned: 'Planned', paused: 'Paused', archived: 'Archived' };
+const STATUS_ORDER: Record<string, number> = {
+  live: 0,
+  building: 1,
+  paused: 2,
+  planned: 3,
+  archived: 4,
+};
+const STATUS_LABEL: Record<string, string> = {
+  live: "Live",
+  building: "Building",
+  planned: "Planned",
+  paused: "Paused",
+  archived: "Archived",
+};
 
-const normalizeStatus = (s: string | string[]) => Array.isArray(s) ? s : [s];
+const normalizeStatus = (s: string | string[]) => (Array.isArray(s) ? s : [s]);
 const primaryStatus = (s: string | string[]) =>
-  normalizeStatus(s).reduce((best, cur) => STATUS_ORDER[cur] < STATUS_ORDER[best] ? cur : best);
+  normalizeStatus(s).reduce((best, cur) =>
+    STATUS_ORDER[cur] < STATUS_ORDER[best] ? cur : best,
+  );
 
 const sorted = [...projects].sort((a, b) => {
-  if (a.data.order != null && b.data.order != null) return a.data.order - b.data.order;
+  if (a.data.order != null && b.data.order != null)
+    return a.data.order - b.data.order;
   if (a.data.order != null) return -1;
   if (b.data.order != null) return 1;
-  const sd = STATUS_ORDER[primaryStatus(a.data.status)] - STATUS_ORDER[primaryStatus(b.data.status)];
+  const sd =
+    STATUS_ORDER[primaryStatus(a.data.status)] -
+    STATUS_ORDER[primaryStatus(b.data.status)];
   return sd !== 0 ? sd : a.data.title.localeCompare(b.data.title);
 });
 
-const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
+const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
 ---
 
 <div class="ptable">
-  {sorted.map((project) => {
-    const statuses = normalizeStatus(project.data.status);
-    const prime = primaryStatus(project.data.status);
-    const live = isLive(project.data.status);
+  {
+    sorted.map((project) => {
+      const statuses = normalizeStatus(project.data.status);
+      const prime = primaryStatus(project.data.status);
+      const live = isLive(project.data.status);
+      const internalUrl = `/projects/${project.slug}`;
 
-    return (
-      <div class={`prow prow--${prime}`}>
-        
-        {/* 1. Status (Smaller part of the remainder) */}
-        <div class="col-status">
-          <div class="statuses">
-            {statuses.map((s) => (
-              <span class="status-item">
-                <span class={`dot dot--${s}`}></span>
-                <span class="status-label">{STATUS_LABEL[s]}</span>
-              </span>
-            ))}
+      return (
+        <div
+          class="row-container"
+          onclick={`window.location.href='${internalUrl}'`}
+          style="cursor: pointer;"
+        >
+          <div class={`prow prow--${prime}`}>
+            <div class="col-status">
+              <div class="statuses">
+                {statuses.map((s) => (
+                  <span class="status-item">
+                    <span class={`dot dot--${s}`} />
+                    <span class="status-label">{STATUS_LABEL[s]}</span>
+                  </span>
+                ))}
+              </div>
+              {project.data.eta && <span class="eta">{project.data.eta}</span>}
+            </div>
+
+            <div class="col-name">
+              <span class="title">{project.data.title}</span>
+              {project.data.description && (
+                <span class="desc">{project.data.description}</span>
+              )}
+            </div>
+
+            <div class="col-action">
+              {project.data.link ? (
+                <a
+                  class="use-btn"
+                  href={project.data.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onclick="event.stopPropagation();"
+                >
+                  {live ? "Use" : "Explore"}
+                  <span class="arrow">&rarr;</span>
+                </a>
+              ) : (
+                <span class="no-action">&mdash;</span>
+              )}
+            </div>
           </div>
-          {project.data.eta && (
-            <span class="eta">{project.data.eta}</span>
-          )}
         </div>
-
-        {/* 2. Name and Description (Bigger part of the remainder) */}
-        <div class="col-name">
-          <span class="title">{project.data.title}</span>
-          {project.data.description && (
-            <span class="desc">{project.data.description}</span>
-          )}
-        </div>
-
-        {/* 3. Action (The 1fr tail) */}
-        <div class="col-action">
-          {project.data.link ? (
-            <a class="use-btn" href={project.data.link} target="_blank" rel="noopener noreferrer">
-              {live ? 'Use' : 'Explore'}&nbsp;&rarr;
-            </a>
-          ) : (
-            <span class="no-action">&mdash;</span>
-          )}
-        </div>
-
-      </div>
-    );
-  })}
+      );
+    })
+  }
 </div>
 
 <style>
+  :root {
+    --phi: 1.618rem;
+    --phi-s: 0.618rem;
+  }
+
+  .arrow {
+    display: inline-block;
+    transform: rotate(-45deg);
+    font-weight: 800; /* Force extra weight */
+    font-size: 1.1em; /* Slight scale up to match "Use" caps height */
+    line-height: 1;
+    transition: transform 0.2s ease;
+    vertical-align: middle; /* Fixes "drifting" when rotated */
+  }
+
   .ptable {
     display: flex;
     flex-direction: column;
     border-top: 1px solid var(--border);
+    padding: 0 var(--phi);
   }
 
-.prow {
+  .row-container {
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.3s ease;
+    margin-left: calc(var(--phi) * -1);
+    margin-right: calc(var(--phi) * -1);
+  }
+
+  .row-container:hover {
+    background-color: rgba(var(--ink-rgb, 0, 0, 0), 0.03);
+  }
+
+  .prow {
     display: grid;
-    /* Status (1) : Name (1.618) : Action (1.618) */
     grid-template-columns: 1fr 2.618fr 1.618fr;
     align-items: center;
-    gap: 1.618rem;
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--border);
+    gap: var(--phi);
+    padding: var(--phi) var(--phi);
   }
 
   .col-status {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--phi-s);
   }
-
   .statuses {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.382rem;
   }
-
   .status-item {
     display: flex;
     align-items: center;
-    gap: 0.38rem;
+    gap: 0.382rem;
   }
-
   .status-label {
-    font-size: 0.58rem;
+    font-size: 0.618rem;
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: var(--ink-dim);
@@ -129,51 +177,65 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
     border-radius: 50%;
     flex-shrink: 0;
   }
-
-  .dot--live     { background: #4caf74; }
-  .dot--building { background: #d4a84b; animation: pulse 2.2s ease-in-out infinite; }
-  .dot--paused   { background: var(--ink-dim); opacity: 0.35; }
-  .dot--planned  { background: var(--ink-dim); opacity: 0.18; }
-  .dot--archived { background: var(--border); }
+  .dot--live {
+    background: #4caf74;
+  }
+  .dot--building {
+    background: #d4a84b;
+    animation: pulse 2.2s infinite;
+  }
+  .dot--paused {
+    background: var(--ink-dim);
+    opacity: 0.35;
+  }
+  .dot--planned {
+    background: var(--ink-dim);
+    opacity: 0.18;
+  }
+  .dot--archived {
+    background: var(--border);
+  }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
   }
 
   .eta {
     font-family: "Cormorant Garamond", serif;
-    font-size: 0.75rem;
-    color: var(--ink);
-    line-height: 1.4;
-    margin-top: 0.15rem;
+    font-size: 0.93rem;
+    color: var(--ink-dim);
+    /* font-style: italic;  */
   }
 
   .col-name {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--phi-s);
   }
-
+  .title-link {
+    text-decoration: none;
+    color: inherit;
+    width: fit-content;
+  }
   .title {
     font-family: "Cormorant Garamond", serif;
-    font-size: 1.4rem;
+    font-size: 1.618rem;
     font-weight: 600;
-    line-height: 1.15;
+    line-height: 1.1;
     color: var(--ink);
   }
 
-  .prow--paused .title,
-  .prow--planned .title,
-  .prow--archived .title {
-    color: var(--ink-dim);
-  }
-
   .desc {
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     color: var(--ink-dim);
-    line-height: 1.6;
-    max-width: 52ch;
+    line-height: 1.618;
+    max-width: 45ch;
   }
 
   .col-action {
@@ -185,48 +247,33 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes('live');
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    padding: 0.65rem 1.2rem;
+    min-width: calc(var(--phi) * 4);
+    padding: 0.618rem var(--phi);
     background: var(--ink);
     color: var(--bg, #fff);
     font-family: "Cormorant Garamond", serif;
     font-size: 1rem;
     font-weight: 600;
-    letter-spacing: 0.04em;
     text-decoration: none;
     border: 1px solid var(--ink);
-    transition: opacity 0.15s;
+    transition: opacity 0.2s ease;
   }
 
   .use-btn:hover {
-    opacity: 0.75;
+    opacity: 0.8;
   }
-
   .no-action {
     color: var(--border);
-    font-size: 0.9rem;
-    width: 100%;
-    text-align: center;
+    padding-right: var(--phi);
   }
 
-  @media (max-width: 560px) {
+  @media (max-width: 600px) {
     .prow {
       grid-template-columns: 1fr;
-      gap: 0.75rem;
-      padding: 1.4rem 0;
+      padding: var(--phi) var(--phi-s);
     }
-
-    .col-action {
-      justify-content: flex-start;
-    }
-
     .use-btn {
-      width: auto;
-      padding: 0.6rem 2rem;
-    }
-
-    .no-action {
-      text-align: left;
+      width: 100%;
     }
   }
 </style>
