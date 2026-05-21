@@ -1,8 +1,8 @@
 ---
-title: Synergetics Isle
+title: Synergetics Canopy
 banner:
 status:
-  - building
+  - live
 tags:
   - Synergetics
 link: https://synergetics.pages.dev
