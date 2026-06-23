@@ -10,6 +10,7 @@ interface Project {
     link?: string;
     role?: string;
     order?: number;
+    ctaLabel?: string;  // Notion-only: overrides button text
   };
 }
 
@@ -93,7 +94,7 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
                   rel="noopener noreferrer"
                   onclick="event.stopPropagation();"
                 >
-                  {live ? "Use" : "Explore"}
+                  {project.data.ctaLabel ?? (live ? "Use" : "Explore")}
                   <span class="arrow">&rarr;</span>
                 </a>
               ) : (

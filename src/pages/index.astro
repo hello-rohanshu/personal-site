@@ -1,7 +1,8 @@
 ---
-import { getCollection } from "astro:content";
-const projects = await getCollection("projects");
-import ProjectsList from '../components/ProjectsList.astro'
+import { getNotionProjects } from "../lib/notionProjects";
+import ProjectsList from "../components/ProjectsList.astro";
+
+const projects = await getNotionProjects();
 ---
 
 <!doctype html>
@@ -410,14 +411,18 @@ import ProjectsList from '../components/ProjectsList.astro'
                     </div>
                 </div>
 
-                <!-- <div class="scroll-content">
-                    <section>
-                        <div class="label-row">
-                            <span class="label">Projects</span>
-                            <span class="wip-tag">🚧 WIP</span>
-                        </div>
-                        <ProjectsList projects={projects} />
-                    </section>
+                <div class="scroll-content">
+                    {
+                        projects.length > 0 && (
+                            <section>
+                                <div class="label-row">
+                                    <span class="label">Projects</span>
+                                    <span class="wip-tag">🚧 WIP</span>
+                                </div>
+                                <ProjectsList projects={projects} />
+                            </section>
+                        )
+                    }
 
                     <section class="meta-section">
                         <span class="label">Meta</span>
@@ -432,7 +437,9 @@ import ProjectsList from '../components/ProjectsList.astro'
                                 style="width: 14px; height: 14px;"></i> Changelog
                         </a>
                     </section>
-                </div> -->
+                </div>
+
+                <!-- ----------- PROJECTS SECTION ENDS  --------------- -->
             </main>
 
             <aside class="right">
@@ -441,10 +448,11 @@ import ProjectsList from '../components/ProjectsList.astro'
                     class="blog-trigger"
                     target="_blank"
                 >
-                    <span class="label">Blog
+                    <span class="label"
+                        >Blog
                         <span class="wip-tag">🚧 WIP</span>
                     </span>
-                    
+
                     <span class="blog-url">rohanshu.bearblog.dev &rarr;</span>
                 </a>
             </aside>
