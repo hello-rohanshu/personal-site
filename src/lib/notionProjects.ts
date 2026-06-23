@@ -48,8 +48,41 @@ function getRichText(prop: any): string | undefined {
   return text || undefined;
 }
 
+// Notion's url-type property does no validation: typing "google.com"
+// (no scheme) is stored and returned exactly as "google.com". Notion's
+// own UI resolves bare domains for you when you click them, but a raw
+// <a href="google.com"> on our site is a relative URL, so the browser
+// resolves it against the current page path (e.g. becomes
+// "/projects/google.com") instead of going to the external site. Add
+// a scheme whenever one is missing so the href is always absolute.
+function withScheme(value: string): string {
+  // mailto:, tel:, etc. are already absolute — leave them alone.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
+    return value;
+  }
+  // Protocol-relative ("//example.com") is already absolute too.
+  if (value.startsWith("//")) {
+    return `https:${value}`;
+  }
+  return `https://${value}`;
+}
+
+// Notion's "Link" column might be configured as a real `url` property,
+// or it might be a `rich_text` column where someone just typed/pasted a
+// URL. Only checking prop.url meant every row that used rich_text came
+// back as undefined, which made ProjectsList.astro fall through to
+// rendering the row as an internal link (no href) for everything except
+// the one row that happened to use a true url-type field. Check both
+// shapes, trim stray whitespace, and normalize missing schemes.
 function getUrl(prop: any): string | undefined {
-  return prop?.url || undefined;
+  if (typeof prop?.url === "string" && prop.url.trim()) {
+    return withScheme(prop.url.trim());
+  }
+  const rich = prop?.rich_text?.[0]?.plain_text;
+  if (typeof rich === "string" && rich.trim()) {
+    return withScheme(rich.trim());
+  }
+  return undefined;
 }
 
 function getNumber(prop: any): number | undefined {
