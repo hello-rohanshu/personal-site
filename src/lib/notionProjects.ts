@@ -25,12 +25,26 @@ export interface NormalizedProject {
     status: StatusValue | StatusValue[];
     eta?: string;
     link?: string;
+    domain?: string;
     role?: string;
     order?: number;
     ctaLabel?: string;
     hidden?: boolean;
     source: "notion";
+    changelog?: string;
   };
+}
+
+// Shared favicon provider list. Ordered by quality/reliability; the
+// Favicon.astro component walks this list on <img> error so a dead
+// provider transparently falls through to the next one.
+export function getFaviconProviders(domain: string): string[] {
+  return [
+    `https://favicon.im/${domain}?larger=true`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+    `https://${domain}/favicon.ico`,
+  ];
 }
 
 // --- Notion API response helpers ---
@@ -101,12 +115,29 @@ function slugify(title: string): string {
     .replace(/\s+/g, "-");
 }
 
+// Pull the bare hostname out of a URL so it can be handed to favicon
+// providers (which expect a domain, not a full URL). Strips "www." so
+// lookups are consistent across rows that mix "example.com" and
+// "www.example.com". Returns undefined for empty/invalid input so
+// callers can skip rendering a favicon rather than showing a broken one.
+function extractDomain(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
+
 function normalizePage(page: any): NormalizedProject {
   const props = page.properties;
 
   const title = getTitle(props["Title"]);
   const statusRaw = getMultiSelect(props["Status"]);
   const status = (statusRaw.length > 0 ? statusRaw : ["planned"]) as StatusValue[];
+
+  const link = getUrl(props["Link"]);
+  const changelog = getUrl(props["Changelog"]);
 
   return {
     slug: slugify(title),
@@ -115,12 +146,14 @@ function normalizePage(page: any): NormalizedProject {
       description: getRichText(props["Description"]),
       status,
       eta: getRichText(props["ETA"]),
-      link: getUrl(props["Link"]),
+      link,
+      domain: extractDomain(link || changelog),
       role: getRichText(props["Role"]),
       order: getNumber(props["Order"]),
       ctaLabel: getRichText(props["CTA Label"]),
       hidden: getCheckbox(props["Hidden"]),
       source: "notion",
+      changelog,
     },
   };
 }

@@ -302,11 +302,10 @@ const projects = await getNotionProjects();
                 color: var(--ink);
             }
 
-            /* ── Meta ── */
+            /* ── More ── */
 
             .meta-section {
-                padding-top: 2rem;
-                border-top: 1px solid var(--border);
+                /* standard spacing without top border line */
             }
 
             /* ── Right ── */
@@ -415,27 +414,41 @@ const projects = await getNotionProjects();
                     {
                         projects.length > 0 && (
                             <section>
-                                <div class="label-row">
-                                    <span class="label">Projects</span>
-                                    <span class="wip-tag">🚧 WIP</span>
-                                </div>
+                                <span class="label">Projects</span>
                                 <ProjectsList projects={projects} />
                             </section>
                         )
                     }
 
                     <section class="meta-section">
-                        <span class="label">Meta</span>
-                        <a
-                            href="https://rohanshu.bearblog.dev/my-website/"
-                            class="contact-item"
-                            style="font-size: 0.8rem; color: var(--ink-dim);"
-                            target="_blank"
-                        >
-                            <i
-                                data-lucide="history"
-                                style="width: 14px; height: 14px;"></i> Changelog
-                        </a>
+                        <span class="label">More</span>
+                        <div class="contact-list">
+                            <a
+                                href="/projects-releases"
+                                class="contact-item"
+                                style="font-size: 0.8rem; color: var(--ink-dim);"
+                            >
+                                All Projects releases
+                            </a>
+                            <a
+                                href="https://github.com/hello-rohanshu/personal-site/blob/main/CHANGELOG.md"
+                                class="contact-item"
+                                style="font-size: 0.8rem; color: var(--ink-dim);"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Changelog
+                            </a>
+                            <a
+                                href="https://github.com/hello-rohanshu/personal-site"
+                                class="contact-item"
+                                style="font-size: 0.8rem; color: var(--ink-dim);"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                GitHub Link
+                            </a>
+                        </div>
                     </section>
                 </div>
 

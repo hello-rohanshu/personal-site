@@ -1,0 +1,42 @@
+---
+interface Props {
+  domain: string;
+  size?: number;
+  fallback?: string;
+  class?: string;
+}
+
+const { domain, size = 18, fallback = "/generic-icon.svg", class: className = "" } = Astro.props;
+
+if (!domain) return null;
+
+const providers = [
+  `https://favicon.im/${domain}?larger=true`,
+  `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+  `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+  `https://${domain}/favicon.ico`,
+];
+---
+
+<img
+  src={providers[0]}
+  data-providers={JSON.stringify(providers)}
+  data-fallback={fallback}
+  data-index="0"
+  width={size}
+  height={size}
+  alt=""
+  class={className}
+  style={`width: ${size}px; height: ${size}px; border-radius: 3px; object-fit: contain;`}
+  onerror="
+    const providers = JSON.parse(this.dataset.providers);
+    let next = parseInt(this.dataset.index, 10) + 1;
+    if (next < providers.length) {
+      this.dataset.index = next;
+      this.src = providers[next];
+    } else {
+      this.src = this.dataset.fallback;
+      this.onerror = null;
+    }
+  "
+/>

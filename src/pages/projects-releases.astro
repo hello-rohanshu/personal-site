@@ -1,0 +1,576 @@
+---
+import { getNotionProjects } from "../lib/notionProjects";
+import Favicon from "../components/Favicon.astro";
+
+interface Section { name: string; items: string[]; }
+interface Entry {
+  version: string;
+  date: string | null;
+  sections: Section[];
+  project: string;
+  domain?: string;
+}
+interface FlatEntry extends Entry { gapDays?: number; }
+
+function parseChangelog(md: string, project: string, domain?: string): Entry[] {
+  const clean = md.replace(/<!--[\s\S]*?-->/g, "");
+  const entries: Entry[] = [];
+  let current: Entry | null = null;
+  let section: Section | null = null;
+
+  for (const raw of clean.split("\n")) {
+    const line = raw.trimEnd();
+
+    const h2 = line.match(/^##\s+(.+)$/);
+    if (h2) {
+      const rawVer = h2[1].trim();
+      const m = rawVer.match(/^\[?([^\]]+)\]?\s*(?:[-–—]\s*(\d{4}-\d{2}-\d{2}))?/);
+      const version = m?.[1]?.trim() ?? rawVer;
+      const date = m?.[2] ?? null;
+      current = { version, date, sections: [], project, domain };
+      entries.push(current);
+      section = null;
+      continue;
+    }
+
+    const h3 = line.match(/^###\s+(.+)$/);
+    if (h3 && current) {
+      section = { name: h3[1].trim(), items: [] };
+      current.sections.push(section);
+      continue;
+    }
+
+    const bullet = line.match(/^[\s]*[-*+]\s+(.+)$/);
+    if (bullet && section) {
+      section.items.push(bullet[1].trim());
+    }
+  }
+
+  return entries;
+}
+
+function daysBetween(a: string, b: string): number {
+  const d1 = new Date(a + "T00:00:00Z").getTime();
+  const d2 = new Date(b + "T00:00:00Z").getTime();
+  return Math.round(Math.abs(d1 - d2) / 86400000);
+}
+
+function formatGap(days: number): string {
+  if (days === 1) return "1 day";
+  return `${days} days`;
+}
+
+function formatVersion(ver: string): string {
+  return /^v/i.test(ver) ? ver : `v${ver}`;
+}
+
+function formatHumaneDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const [yStr, mStr, dStr] = dateStr.split("-");
+  if (!yStr || !mStr || !dStr) return dateStr;
+  
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  const month = months[parseInt(mStr, 10) - 1];
+  const day = parseInt(dStr, 10);
+  const year = parseInt(yStr, 10);
+  
+  const currentYear = new Date().getFullYear();
+  if (year < currentYear) {
+    return `${month} ${day}, ${year}`;
+  }
+  return `${month} ${day}`;
+}
+
+const projects = await getNotionProjects();
+const withChangelog = projects.filter((p) => p.data.changelog);
+
+const all: Entry[] = [];
+for (const p of withChangelog) {
+  try {
+    const res = await fetch(p.data.changelog!);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const md = await res.text();
+    all.push(...parseChangelog(md, p.data.title, p.data.domain));
+  } catch (e: any) {
+    console.warn(`[timeline] ${p.data.title}: ${e.message}`);
+  }
+}
+
+const dated = all
+  .filter((e) => e.date && e.version.toLowerCase() !== "unreleased")
+  .sort((a, b) => (a.date! < b.date! ? 1 : -1));
+
+const flat: FlatEntry[] = dated.map((e, i) => {
+  const next = dated[i + 1];
+  return { ...e, gapDays: next ? daysBetween(e.date!, next.date!) : undefined };
+});
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Releases — Rohanshu</title>
+    
+    <script is:inline>
+      (function () {
+        const saved = localStorage.getItem("theme-preference");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (saved === "dark" || (!saved && prefersDark)) {
+          document.documentElement.classList.add("dark-mode");
+        }
+      })();
+    </script>
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><polygon points=%2250,15 90,85 10,85%22 fill=%22none%22 stroke=%22%23111111%22 stroke-width=%226%22/></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script
+      is:inline
+      src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"
+    ></script>
+
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #faf9f6;
+        --ink: #1a1917;
+        --ink-dim: #78756d;
+        --border: #dfdcd3;
+        --right-bg: #efece4;
+        --gap-bg: #e6e2d6;
+        --gap-ink: #3f3b30;
+      }
+
+      html.dark-mode {
+        --bg: #0d0c0a;
+        --ink: #f3eee3;
+        --ink-dim: #948b7a;
+        --border: #28251e;
+        --right-bg: #171612;
+        --gap-bg: #211e17;
+        --gap-ink: #ded6c2;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+
+      .container {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 3.5rem 1.25rem 6rem;
+      }
+
+      .header-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+      }
+
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--ink-dim);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.3rem 0.6rem;
+        margin-left: -0.6rem;
+        border-radius: 6px;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+
+      .back:hover {
+        color: var(--ink);
+        background: var(--right-bg);
+      }
+
+      .theme-toggle {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--ink-dim);
+        padding: 0.45rem;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+
+      .theme-toggle:hover {
+        color: var(--ink);
+        background: var(--right-bg);
+      }
+
+      #sun-icon { display: none; }
+      html.dark-mode #sun-icon { display: block; }
+      html.dark-mode #moon-icon { display: none; }
+
+      .title-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3.5rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      h1 {
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(2.6rem, 6vw, 4rem);
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+
+      .toggle-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--ink-dim);
+        background: none;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 500;
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      }
+
+      .toggle-all:hover {
+        color: var(--ink);
+        background: var(--right-bg);
+        border-color: var(--ink-dim);
+      }
+
+      /* ── Timeline Axis Layout ── */
+
+      .timeline {
+        position: relative;
+        padding-left: 95px;
+      }
+
+      .spine {
+        position: absolute;
+        left: 45px;
+        top: 18px;
+        bottom: 18px;
+        width: 1px;
+        background: var(--border);
+      }
+
+      .entry-node {
+        position: relative;
+        margin-bottom: 0.85rem;
+      }
+
+      /* ── Toggle Header ── */
+
+      .entry-toggle summary {
+        position: relative;
+        list-style: none;
+        cursor: pointer;
+        user-select: none;
+        padding: 0.65rem 0.85rem;
+        border-radius: 8px;
+        transition: background 0.15s ease;
+      }
+
+      .entry-toggle summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .entry-toggle summary:hover {
+        background: var(--right-bg);
+      }
+
+      /* Spine Date Perfectly Center-Aligned with Header */
+      .spine-date {
+        position: absolute;
+        left: -50px;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg);
+        padding: 0 0.5rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--ink);
+        white-space: nowrap;
+        z-index: 2;
+        user-select: none;
+      }
+
+      .summary-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-height: 1.5rem;
+      }
+
+      .project-header {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+      }
+
+      /* Larger Favicon Styling */
+      .project-header img,
+      .project-header svg,
+      .project-header :global(img),
+      .project-header :global(svg) {
+        width: 22px !important;
+        height: 22px !important;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+
+      .project {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.55rem;
+        font-weight: 600;
+        line-height: 1.1;
+      }
+
+      /* Highly Visible Version Tag (No Pill) */
+      .ver {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+        margin-left: 0.1rem;
+      }
+
+      .chevron-icon {
+        width: 15px;
+        height: 15px;
+        color: var(--ink-dim);
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
+        flex-shrink: 0;
+      }
+
+      .entry-toggle summary:hover .chevron-icon {
+        color: var(--ink);
+      }
+
+      .entry-toggle[open] .chevron-icon {
+        transform: rotate(180deg);
+      }
+
+      /* ── Details Content ── */
+
+      .entry-details {
+        padding: 0.85rem 0.85rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.15rem;
+      }
+
+      /* De-emphasized Section Tags (Added / Changed) */
+      .section-tag {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 500;
+        text-transform: lowercase;
+        font-style: italic;
+        letter-spacing: 0.04em;
+        color: var(--ink-dim);
+        margin-bottom: 0.3rem;
+        opacity: 0.85;
+      }
+
+      ul.changelog-list {
+        list-style-type: disc;
+        padding-left: 1.15rem;
+      }
+
+      ul.changelog-list li {
+        font-size: 0.88rem;
+        color: var(--ink);
+        line-height: 1.6;
+        font-weight: 400;
+        margin-bottom: 0.25rem;
+      }
+
+      ul.changelog-list li::marker {
+        color: var(--ink-dim);
+      }
+
+      /* ── Spine Gap Divider ── */
+
+      .gap-divider {
+        position: relative;
+        height: 4.5rem;
+        display: flex;
+        align-items: center;
+      }
+
+      .spine-gap-badge {
+        position: absolute;
+        left: -50px;
+        transform: translateX(-50%);
+        background: var(--gap-bg);
+        color: var(--gap-ink);
+        padding: 0.22rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        z-index: 2;
+      }
+
+      .empty {
+        color: var(--ink-dim);
+        font-size: 0.9rem;
+        font-style: italic;
+      }
+
+      @media (max-width: 480px) {
+        .timeline {
+          padding-left: 80px;
+        }
+        .spine {
+          left: 36px;
+        }
+        .spine-date, .spine-gap-badge {
+          left: -44px;
+          font-size: 0.72rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <header class="header-nav">
+        <a href="/" class="back">
+          <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> back
+        </a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+          <i data-lucide="sun" id="sun-icon" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="moon" id="moon-icon" style="width: 16px; height: 16px;"></i>
+        </button>
+      </header>
+
+      <main>
+        <div class="title-section">
+          <h1>All Releases</h1>
+          <button id="toggle-all" class="toggle-all" aria-label="Expand or collapse all entries">
+            <i data-lucide="chevrons-up-down" style="width: 14px; height: 14px;"></i>
+            <span id="toggle-all-label">Expand All</span>
+          </button>
+        </div>
+
+        {flat.length === 0 && <p class="empty">No entries yet.</p>}
+
+        <div class="timeline">
+          <div class="spine"></div>
+          {
+            flat.map((e, index) => (
+              <>
+                <div class="entry-node">
+                  <details class="entry-toggle" open={index === 0}>
+                    <summary>
+                      <span class="spine-date">
+                        {formatHumaneDate(e.date!)}
+                      </span>
+                      <div class="summary-content">
+                        <div class="project-header">
+                          {/* {e.domain && <Favicon domain={e.domain} />} // Canopy website has bad favicon which appears mis-aligned here so keeping it all hidden for now */}
+                          <span class="project">{e.project}</span>
+                          <span class="ver">{formatVersion(e.version)}</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="chevron-icon" />
+                      </div>
+                    </summary>
+
+                    <div class="entry-details">
+                      {e.sections.map((s) => (
+                        <div>
+                          <span class="section-tag">{s.name}</span>
+                          <ul class="changelog-list">
+                            {s.items.map((item) => (
+                              <li>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </div>
+
+                {e.gapDays !== undefined && (
+                  <div class="gap-divider">
+                    <span class="spine-gap-badge">
+                      {formatGap(e.gapDays)}
+                    </span>
+                  </div>
+                )}
+              </>
+            ))
+          }
+        </div>
+      </main>
+    </div>
+
+    <script is:inline>
+      lucide.createIcons();
+
+      const themeToggle = document.getElementById("theme-toggle");
+      themeToggle.addEventListener("click", () => {
+        const isDark = document.documentElement.classList.toggle("dark-mode");
+        localStorage.setItem("theme-preference", isDark ? "dark" : "light");
+      });
+
+      const toggleAllBtn = document.getElementById("toggle-all");
+      const toggleAllLabel = document.getElementById("toggle-all-label");
+
+      if (toggleAllBtn) {
+        toggleAllBtn.addEventListener("click", () => {
+          const detailsList = document.querySelectorAll(".entry-toggle");
+          const shouldExpand = Array.from(detailsList).some((el) => !el.hasAttribute("open"));
+
+          detailsList.forEach((el) => {
+            if (shouldExpand) {
+              el.setAttribute("open", "");
+            } else {
+              el.removeAttribute("open");
+            }
+          });
+
+          if (toggleAllLabel) {
+            toggleAllLabel.textContent = shouldExpand ? "Collapse All" : "Expand All";
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
