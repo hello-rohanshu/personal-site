@@ -11,6 +11,7 @@ This is the website of me. I have quite a few principles which I'm yet to detail
 - A dashboard. David Allen's GTD details how our brain is great for idea invoking but really bad as a storage unit. He points at the importance of being presented with the right data at the right time. This site will be the dashboard of me.
 - Buckminster Fuller speaks of the "Geoscope" in his book Critical Path. It is his proposal of a tool which aims to solve the human problem of being unable to notice changes which takes place over a long period of time or happen very slowly - like noticing our height only via our clothes not fitting, and so on. This site is the "Selfscope", as I'm calling it. Just like the Geoscope makes the Earth easy to understand as a system. Selfscope, does the same for the individual.
 - I find that things which are not public-facing in my life, tend to stagnate. I think there is an internal compass which realizes that anything which is not useful for the world is not useful per se and gets ignored. This co-relates with Buckminster Fuller's noticing that he was, paraphrasing: "maximally effective the more the amount of people he took the initiative to take care of, over the maximum time range he could conceptualize ahead".
+- Sadhguru says that "if take responsibility for a 100 people it will become extremely burdensome,if you take responsibility for a 1000 people it will become even more burdensome. If your responsibility is boundless, no boundaries, no burdensomeness."
 
 ## Stack
 
