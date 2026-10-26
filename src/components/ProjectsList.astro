@@ -170,7 +170,26 @@ const postponedProjects = sorted.filter(isPostponed);
               <div class="statuses">
                 {statuses.map((s) => (
                   <span class="status-item">
-                    <span class={`dot dot--${s}`} />
+                    <span class={`status-icon status-icon--${s}`}>
+                      {s === "working-on" ? (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          stroke="none"
+                        >
+                          <polygon points="6 4 20 12 6 20" />
+                        </svg>
+                      ) : (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          stroke="none"
+                        >
+                          <rect x="6" y="4" width="4" height="16" />
+                          <rect x="14" y="4" width="4" height="16" />
+                        </svg>
+                      )}
+                    </span>
                     <span class="status-label">{STATUS_LABEL[s]}</span>
                   </span>
                 ))}
@@ -459,21 +478,26 @@ const postponedProjects = sorted.filter(isPostponed);
     letter-spacing: 0.14em;
     color: var(--ink-dim);
   }
-  .dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
+  .status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 8px;
+    height: 8px;
     flex-shrink: 0;
+    color: var(--ink-dim);
+    /* prevent layout flash before style arrives */
+    contain: layout paint;
   }
-  .dot--working-on {
-    background: #4caf74;
+  .status-icon svg {
+    width: 8px;
+    height: 8px;
+    display: block;
+    overflow: visible;
+  }
+  .status-icon--working-on {
+    color: #4caf74;
     animation: pulse 2.4s ease-in-out infinite;
-  }
-  .dot--paused {
-    background: #b3a99a;
-  }
-  .dot--planned {
-    background: #cdc6ba;
   }
 
   @keyframes pulse {
