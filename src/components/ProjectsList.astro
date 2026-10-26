@@ -5,7 +5,7 @@
 // ============================================================
 const USE_DUMMY = true;
 
-type StatusValue = "working-on" | "paused" | "future";
+type StatusValue = "working-on" | "paused" | "planned";
 type Level = "high" | "medium" | "low";
 
 interface Project {
@@ -32,7 +32,7 @@ const DUMMY_PROJECTS: Project[] = [
       title: "Ostium",
       description:
         "A minimal personal knowledge manager that lives in your menu bar.",
-      status: "future",
+      status: "paused",
       link: "https://example.com",
       version: "v1.4.2",
       effort: "high",
@@ -85,15 +85,24 @@ const projects: Project[] = USE_DUMMY ? DUMMY_PROJECTS : (propProjects ?? []);
 const STATUS_ORDER: Record<string, number> = {
   "working-on": 0,
   paused: 1,
-  future: 2,
+  planned: 2,
 };
 const STATUS_LABEL: Record<string, string> = {
   "working-on": "Working on",
   paused: "Paused",
-  future: "Future",
+  planned: "Planned",
 };
 
 const normalizeStatus = (s: string | string[]) => (Array.isArray(s) ? s : [s]);
+
+// A paused project that has a date but no usable surface reads as "planned".
+const effectiveStatuses = (p: Project): string[] => {
+  const raw = normalizeStatus(p.data.status);
+  if (raw.includes("paused") && !p.data.link && p.data.eta) {
+    return raw.map((s) => (s === "paused" ? "planned" : s));
+  }
+  return raw;
+};
 const primaryStatus = (s: string | string[]) => {
   const list = normalizeStatus(s);
   return list.reduce(
@@ -145,11 +154,10 @@ const postponedProjects = sorted.filter(isPostponed);
 <div class="ptable">
   {
     mainProjects.map((project) => {
-      const statuses = normalizeStatus(project.data.status);
-      const prime = primaryStatus(project.data.status);
+      const statuses = effectiveStatuses(project);
+      const prime = primaryStatus(statuses);
       const internalUrl = `/projects/${project.slug}`;
       const etaText = project.data.eta ? formatEta(project.data.eta) : null;
-      const isFuture = statuses.includes("future");
 
       return (
         <div
@@ -225,27 +233,19 @@ const postponedProjects = sorted.filter(isPostponed);
                 </span>
               ) : (
                 <span class="btn btn--muted">
-                  {isFuture && (
-                    <svg
-                      class="icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M9 18h6M10 22h4" />
-                      <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2v.3h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z" />
-                    </svg>
-                  )}
-                  <span>
-                    {isFuture
-                      ? "Planning"
-                      : prime === "working-on"
-                        ? "Building"
-                        : "\u2014"}
-                  </span>
+                  <svg
+                    class="icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M9 18h6M10 22h4" />
+                    <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2v.3h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z" />
+                  </svg>
+                  <span>Planning</span>
                 </span>
               )}
             </div>
@@ -275,8 +275,8 @@ const postponedProjects = sorted.filter(isPostponed);
       </summary>
       <div class="ptable ptable--postponed">
         {postponedProjects.map((project) => {
-          const statuses = normalizeStatus(project.data.status);
-          const prime = primaryStatus(project.data.status);
+          const statuses = effectiveStatuses(project);
+          const prime = primaryStatus(statuses);
           const internalUrl = `/projects/${project.slug}`;
 
           return (
@@ -472,7 +472,7 @@ const postponedProjects = sorted.filter(isPostponed);
   .dot--paused {
     background: #b3a99a;
   }
-  .dot--future {
+  .dot--planned {
     background: #cdc6ba;
   }
 
