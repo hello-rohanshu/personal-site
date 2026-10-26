@@ -1,5 +1,13 @@
 ---
-type StatusValue = "live" | "building" | "planned" | "paused" | "archived";
+// ============================================================
+// DUMMY DATA (temporary — UI iteration only)
+// Set USE_DUMMY = false to consume real (Notion-fed) props.
+// ============================================================
+const USE_DUMMY = true;
+
+type StatusValue = "working-on" | "paused" | "future";
+type Level = "high" | "medium" | "low";
+
 interface Project {
   slug: string;
   data: {
@@ -10,33 +18,108 @@ interface Project {
     link?: string;
     role?: string;
     order?: number;
-    ctaLabel?: string;  // Notion-only: overrides button text
+    ctaLabel?: string;
+    version?: string;
+    effort?: Level;
+    leverage?: Level;
   };
 }
 
-const { projects = [] } = Astro.props as { projects: Project[] };
+const DUMMY_PROJECTS: Project[] = [
+  {
+    slug: "dummy-ostium",
+    data: {
+      title: "Ostium",
+      description:
+        "A minimal personal knowledge manager that lives in your menu bar.",
+      status: "future",
+      link: "https://example.com",
+      version: "v1.4.2",
+      effort: "high",
+      leverage: "high",
+      order: 1,
+    },
+  },
+  {
+    slug: "dummy-quiet-hours",
+    data: {
+      title: "Quiet Hours",
+      description:
+        "A focus timer that respects your calendar and mutes itself during calls.",
+      status: "paused",
+      eta: "2026-11-15",
+      version: "v0.3.0",
+      effort: "low",
+      leverage: "medium",
+      order: 2,
+    },
+  },
+  {
+    slug: "dummy-field-notes",
+    data: {
+      title: "Field Notes",
+      description: "A pocket notebook for capture, sync, and slow review.",
+      status: "working-on",
+      effort: "medium",
+      leverage: "high",
+      order: 3,
+    },
+  },
+  {
+    slug: "dummy-tide",
+    data: {
+      title: "Tide",
+      description: "Sleep-aware reading companion.",
+      status: "paused",
+      effort: "low",
+      leverage: "low",
+      order: 4,
+    },
+  },
+];
 
+const propProjects = (Astro.props as { projects?: Project[] }).projects;
+const projects: Project[] = USE_DUMMY ? DUMMY_PROJECTS : (propProjects ?? []);
+
+// -------- status --------
 const STATUS_ORDER: Record<string, number> = {
-  live: 0,
-  building: 1,
-  paused: 2,
-  planned: 3,
-  archived: 4,
+  "working-on": 0,
+  paused: 1,
+  future: 2,
 };
 const STATUS_LABEL: Record<string, string> = {
-  live: "Live",
-  building: "Building",
-  planned: "Planned",
+  "working-on": "Working on",
   paused: "Paused",
-  archived: "Archived",
+  future: "Future",
 };
 
 const normalizeStatus = (s: string | string[]) => (Array.isArray(s) ? s : [s]);
-const primaryStatus = (s: string | string[]) =>
-  normalizeStatus(s).reduce((best, cur) =>
-    STATUS_ORDER[cur] < STATUS_ORDER[best] ? cur : best,
+const primaryStatus = (s: string | string[]) => {
+  const list = normalizeStatus(s);
+  return list.reduce(
+    (best, cur) => (STATUS_ORDER[cur] < STATUS_ORDER[best] ? cur : best),
+    list[0],
   );
+};
 
+// -------- effort / leverage --------
+const levelLabel = (level: Level, kind: "effort" | "leverage") =>
+  `${level.charAt(0).toUpperCase()}${level.slice(1)} ${kind}`;
+
+// -------- humane eta --------
+const formatEta = (raw: string): string => {
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  const now = new Date();
+  const withinYear = d.getTime() - now.getTime() < 1000 * 60 * 60 * 24 * 365;
+  const sameYear = d.getFullYear() === now.getFullYear();
+  if (withinYear || sameYear) {
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+};
+
+// -------- sort --------
 const sorted = [...projects].sort((a, b) => {
   if (a.data.order != null && b.data.order != null)
     return a.data.order - b.data.order;
@@ -48,16 +131,25 @@ const sorted = [...projects].sort((a, b) => {
   return sd !== 0 ? sd : a.data.title.localeCompare(b.data.title);
 });
 
-const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
+// -------- postponed split --------
+// A project is "postponed" when it's paused, has no ETA, and no link —
+// i.e. a dream with no work-in-flight and no shipping surface.
+const isPostponed = (p: Project) => {
+  const statuses = normalizeStatus(p.data.status);
+  return statuses.includes("paused") && !p.data.eta && !p.data.link;
+};
+const mainProjects = sorted.filter((p) => !isPostponed(p));
+const postponedProjects = sorted.filter(isPostponed);
 ---
 
 <div class="ptable">
   {
-    sorted.map((project) => {
+    mainProjects.map((project) => {
       const statuses = normalizeStatus(project.data.status);
       const prime = primaryStatus(project.data.status);
-      const live = isLive(project.data.status);
       const internalUrl = `/projects/${project.slug}`;
+      const etaText = project.data.eta ? formatEta(project.data.eta) : null;
+      const isFuture = statuses.includes("future");
 
       return (
         <div
@@ -75,30 +167,86 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
                   </span>
                 ))}
               </div>
-              {project.data.eta && <span class="eta">{project.data.eta}</span>}
             </div>
 
             <div class="col-name">
-              <span class="title">{project.data.title}</span>
+              <div class="title-row">
+                <span class="title">{project.data.title}</span>
+                {project.data.version && (
+                  <span class="version">{project.data.version}</span>
+                )}
+              </div>
               {project.data.description && (
                 <span class="desc">{project.data.description}</span>
+              )}
+              {(project.data.effort || project.data.leverage) && (
+                <div class="tags">
+                  {project.data.effort && (
+                    <span class={`tag tag--${project.data.effort}`}>
+                      {levelLabel(project.data.effort, "effort")}
+                    </span>
+                  )}
+                  {project.data.leverage && (
+                    <span class={`tag tag--${project.data.leverage}`}>
+                      {levelLabel(project.data.leverage, "leverage")}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
 
             <div class="col-action">
               {project.data.link ? (
                 <a
-                  class="use-btn"
+                  class="btn btn--dark"
                   href={project.data.link}
                   target="_blank"
                   rel="noopener noreferrer"
                   onclick="event.stopPropagation();"
                 >
-                  {project.data.ctaLabel ?? (live ? "Use" : "Explore")}
+                  <span>{project.data.ctaLabel ?? "Use"}</span>
                   <span class="arrow">&rarr;</span>
                 </a>
+              ) : etaText ? (
+                <span class="btn btn--muted">
+                  <svg
+                    class="icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                  <span>{etaText}</span>
+                </span>
               ) : (
-                <span class="no-action">&mdash;</span>
+                <span class="btn btn--muted">
+                  {isFuture && (
+                    <svg
+                      class="icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M9 18h6M10 22h4" />
+                      <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2v.3h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z" />
+                    </svg>
+                  )}
+                  <span>
+                    {isFuture
+                      ? "Planning"
+                      : prime === "working-on"
+                        ? "Building"
+                        : "\u2014"}
+                  </span>
+                </span>
               )}
             </div>
           </div>
@@ -107,6 +255,101 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
     })
   }
 </div>
+
+{
+  postponedProjects.length > 0 && (
+    <details class="postponed">
+      <summary>
+        <svg
+          class="chev"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+        <span>Postponed ({postponedProjects.length})</span>
+      </summary>
+      <div class="ptable ptable--postponed">
+        {postponedProjects.map((project) => {
+          const statuses = normalizeStatus(project.data.status);
+          const prime = primaryStatus(project.data.status);
+          const internalUrl = `/projects/${project.slug}`;
+
+          return (
+            <div
+              class="row-container"
+              onclick={`window.location.href='${internalUrl}'`}
+              style="cursor: pointer;"
+            >
+              <div class={`prow prow--${prime}`}>
+                <div class="col-status">
+                  <div class="statuses">
+                    {statuses.map((s) => (
+                      <span class="status-item">
+                        <span class={`dot dot--${s}`} />
+                        <span class="status-label">{STATUS_LABEL[s]}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div class="col-name">
+                  <div class="title-row">
+                    <span class="title">{project.data.title}</span>
+                    {project.data.version && (
+                      <span class="version">{project.data.version}</span>
+                    )}
+                  </div>
+                  {project.data.description && (
+                    <span class="desc">{project.data.description}</span>
+                  )}
+                  {(project.data.effort || project.data.leverage) && (
+                    <div class="tags">
+                      {project.data.effort && (
+                        <span class={`tag tag--${project.data.effort}`}>
+                          {levelLabel(project.data.effort, "effort")}
+                        </span>
+                      )}
+                      {project.data.leverage && (
+                        <span class={`tag tag--${project.data.leverage}`}>
+                          {levelLabel(project.data.leverage, "leverage")}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div class="col-action">
+                  <span class="btn btn--muted">
+                    <svg
+                      class="icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
+                    <span>Postponed</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  )
+}
 
 <style>
   :root {
@@ -117,11 +360,11 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
   .arrow {
     display: inline-block;
     transform: rotate(-45deg);
-    font-weight: 800; /* Force extra weight */
-    font-size: 1.1em; /* Slight scale up to match "Use" caps height */
+    font-weight: 800;
+    font-size: 1.1em;
     line-height: 1;
     transition: transform 0.2s ease;
-    vertical-align: middle; /* Fixes "drifting" when rotated */
+    vertical-align: middle;
   }
 
   .ptable {
@@ -130,6 +373,10 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
     border-top: 1px solid var(--border);
     padding: 0 var(--phi);
   }
+  .ptable--postponed {
+    border-top: none;
+    opacity: 0.7;
+  }
 
   .row-container {
     border-bottom: 1px solid var(--border);
@@ -137,7 +384,6 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
     margin-left: calc(var(--phi) * -1);
     margin-right: calc(var(--phi) * -1);
   }
-
   .row-container:hover {
     background-color: rgba(var(--ink-rgb, 0, 0, 0), 0.03);
   }
@@ -150,6 +396,48 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
     padding: var(--phi) var(--phi);
   }
 
+  /* ---- postponed toggle ---- */
+  .postponed {
+    margin-top: 1.25rem;
+    text-align: center;
+  }
+  .postponed > summary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    padding: 0.25rem 0.5rem;
+    font-family: "Inter", sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    opacity: 0.4;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.2s ease;
+    list-style: none;
+  }
+  .postponed > summary::-webkit-details-marker {
+    display: none;
+  }
+  .postponed > summary::marker {
+    content: "";
+  }
+  .postponed > summary:hover {
+    opacity: 0.75;
+  }
+  .postponed .chev {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+  .postponed[open] .chev {
+    transform: rotate(180deg);
+  }
+
+  /* ---- status ---- */
   .col-status {
     display: flex;
     flex-direction: column;
@@ -171,30 +459,21 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
     letter-spacing: 0.14em;
     color: var(--ink-dim);
   }
-
   .dot {
     width: 5px;
     height: 5px;
     border-radius: 50%;
     flex-shrink: 0;
   }
-  .dot--live {
+  .dot--working-on {
     background: #4caf74;
-  }
-  .dot--building {
-    background: #d4a84b;
-    animation: pulse 2.2s infinite;
+    animation: pulse 2.4s ease-in-out infinite;
   }
   .dot--paused {
-    background: var(--ink-dim);
-    opacity: 0.35;
+    background: #b3a99a;
   }
-  .dot--planned {
-    background: var(--ink-dim);
-    opacity: 0.18;
-  }
-  .dot--archived {
-    background: var(--border);
+  .dot--future {
+    background: #cdc6ba;
   }
 
   @keyframes pulse {
@@ -203,26 +482,22 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
       opacity: 1;
     }
     50% {
-      opacity: 0.3;
+      opacity: 0.55;
     }
   }
 
-  .eta {
-    font-family: "Cormorant Garamond", serif;
-    font-size: 0.93rem;
-    color: var(--ink-dim);
-    /* font-style: italic;  */
-  }
-
+  /* ---- name ---- */
   .col-name {
     display: flex;
     flex-direction: column;
     gap: var(--phi-s);
   }
-  .title-link {
-    text-decoration: none;
-    color: inherit;
-    width: fit-content;
+
+  .title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
   .title {
     font-family: "Cormorant Garamond", serif;
@@ -230,6 +505,14 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
     font-weight: 600;
     line-height: 1.1;
     color: var(--ink);
+  }
+  .version {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    opacity: 0.7;
+    transform: translateY(-1px);
   }
 
   .desc {
@@ -239,33 +522,82 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
     max-width: 45ch;
   }
 
+  /* ---- effort / leverage tags ---- */
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.382rem;
+    margin-top: 0.15rem;
+  }
+  .tag {
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.14em 0.55em;
+    border-radius: 2px;
+    border: none;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+  .tag--high {
+    color: #761616;
+    background: #eab8b8;
+  }
+  .tag--medium {
+    color: #6f3f08;
+    background: #eece90;
+  }
+  .tag--low {
+    color: #574808;
+    background: #e3d78a;
+  }
+
+  /* ---- action ---- */
   .col-action {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
   }
 
-  .use-btn {
+  .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.4em;
     min-width: calc(var(--phi) * 4);
     padding: 0.618rem var(--phi);
-    background: var(--ink);
-    color: var(--bg, #fff);
     font-family: "Cormorant Garamond", serif;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
+    line-height: 1;
     text-decoration: none;
-    border: 1px solid var(--ink);
-    transition: opacity 0.2s ease;
+    border: none;
+    transition:
+      opacity 0.2s ease,
+      background-color 0.2s ease;
   }
 
-  .use-btn:hover {
+  .btn--dark {
+    background: var(--ink, #111);
+    color: var(--bg, #fff);
+  }
+  .btn--dark:hover {
     opacity: 0.8;
   }
-  .no-action {
-    color: var(--border);
-    padding-right: var(--phi);
+
+  .btn--muted {
+    background: color-mix(in srgb, var(--ink) 10%, transparent);
+    color: color-mix(in srgb, var(--ink) 68%, transparent);
+  }
+  .btn--muted:hover {
+    background: color-mix(in srgb, var(--ink) 16%, transparent);
+  }
+
+  .icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    opacity: 0.85;
   }
 
   @media (max-width: 600px) {
@@ -273,8 +605,11 @@ const isLive = (s: string | string[]) => normalizeStatus(s).includes("live");
       grid-template-columns: 1fr;
       padding: var(--phi) var(--phi-s);
     }
-    .use-btn {
+    .btn {
       width: 100%;
+    }
+    .col-action {
+      justify-content: flex-start;
     }
   }
 </style>
