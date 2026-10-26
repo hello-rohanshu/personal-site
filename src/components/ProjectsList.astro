@@ -76,6 +76,19 @@ const DUMMY_PROJECTS: Project[] = [
       order: 4,
     },
   },
+  {
+    slug: "dummy-beacon",
+    data: {
+      title: "Beacon",
+      description: "A small status page for personal side projects.",
+      status: "working-on",
+      link: "https://example.com",
+      version: "v0.2.1",
+      effort: "medium",
+      leverage: "medium",
+      order: 5,
+    },
+  },
 ];
 
 const propProjects = (Astro.props as { projects?: Project[] }).projects;
@@ -129,13 +142,14 @@ const formatEta = (raw: string): string => {
 };
 
 // -------- sort --------
-// Bucket priority: working-on → has link → everything else.
+// Bucket priority: has link → has eta (no link) → working-on → rest.
 // Within a bucket, honor manual `order` if present, else alphabetical.
 const bucketOf = (p: Project): number => {
+  if (p.data.link) return 0;
+  if (p.data.eta) return 1;
   const statuses = effectiveStatuses(p);
-  if (statuses.includes("working-on")) return 0;
-  if (p.data.link) return 1;
-  return 2;
+  if (statuses.includes("working-on")) return 2;
+  return 3;
 };
 
 const sorted = [...projects].sort((a, b) => {
@@ -151,12 +165,11 @@ const sorted = [...projects].sort((a, b) => {
   return a.data.title.localeCompare(b.data.title);
 });
 
-// -------- postponed split --------
-// A project is "postponed" when it's paused, has no ETA, and no link —
-// i.e. a dream with no work-in-flight and no shipping surface.
+// -------- hidden split --------
+// A project is "hidden" when it has no usable surface (no link) and no
+// date — i.e. nothing the reader can act on or look forward to.
 const isPostponed = (p: Project) => {
-  const statuses = normalizeStatus(p.data.status);
-  return statuses.includes("paused") && !p.data.eta && !p.data.link;
+  return !p.data.link && !p.data.eta;
 };
 const mainProjects = sorted.filter((p) => !isPostponed(p));
 const postponedProjects = sorted.filter(isPostponed);
@@ -301,7 +314,7 @@ const postponedProjects = sorted.filter(isPostponed);
         >
           <path d="M6 9l6 6 6-6" />
         </svg>
-        <span>Postponed</span>
+        <span>Hidden</span>
       </summary>
       <div class="ptable ptable--postponed">
         {postponedProjects.map((project) => {
@@ -374,20 +387,39 @@ const postponedProjects = sorted.filter(isPostponed);
 
                 <div class="col-action">
                   <span class="btn btn--muted">
-                    <svg
-                      class="icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M4 7h16" />
-                      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                      <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
-                    </svg>
-                    <span>Postponed</span>
+                    {statuses.includes("working-on") ? (
+                      <svg
+                        class="icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M9 18h6M10 22h4" />
+                        <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2v.3h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z" />
+                      </svg>
+                    ) : (
+                      <svg
+                        class="icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M4 7h16" />
+                        <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                        <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
+                      </svg>
+                    )}
+                    <span>
+                      {statuses.includes("working-on")
+                        ? "Planning"
+                        : "Postponed"}
+                    </span>
                   </span>
                 </div>
               </div>
