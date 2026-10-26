@@ -129,15 +129,26 @@ const formatEta = (raw: string): string => {
 };
 
 // -------- sort --------
+// Bucket priority: working-on → has link → everything else.
+// Within a bucket, honor manual `order` if present, else alphabetical.
+const bucketOf = (p: Project): number => {
+  const statuses = effectiveStatuses(p);
+  if (statuses.includes("working-on")) return 0;
+  if (p.data.link) return 1;
+  return 2;
+};
+
 const sorted = [...projects].sort((a, b) => {
+  const ba = bucketOf(a);
+  const bb = bucketOf(b);
+  if (ba !== bb) return ba - bb;
+
   if (a.data.order != null && b.data.order != null)
     return a.data.order - b.data.order;
   if (a.data.order != null) return -1;
   if (b.data.order != null) return 1;
-  const sd =
-    STATUS_ORDER[primaryStatus(a.data.status)] -
-    STATUS_ORDER[primaryStatus(b.data.status)];
-  return sd !== 0 ? sd : a.data.title.localeCompare(b.data.title);
+
+  return a.data.title.localeCompare(b.data.title);
 });
 
 // -------- postponed split --------
@@ -290,7 +301,7 @@ const postponedProjects = sorted.filter(isPostponed);
         >
           <path d="M6 9l6 6 6-6" />
         </svg>
-        <span>Postponed ({postponedProjects.length})</span>
+        <span>Postponed</span>
       </summary>
       <div class="ptable ptable--postponed">
         {postponedProjects.map((project) => {
@@ -309,7 +320,26 @@ const postponedProjects = sorted.filter(isPostponed);
                   <div class="statuses">
                     {statuses.map((s) => (
                       <span class="status-item">
-                        <span class={`dot dot--${s}`} />
+                        <span class={`status-icon status-icon--${s}`}>
+                          {s === "working-on" ? (
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              stroke="none"
+                            >
+                              <polygon points="6 4 20 12 6 20" />
+                            </svg>
+                          ) : (
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              stroke="none"
+                            >
+                              <rect x="6" y="4" width="4" height="16" />
+                              <rect x="14" y="4" width="4" height="16" />
+                            </svg>
+                          )}
+                        </span>
                         <span class="status-label">{STATUS_LABEL[s]}</span>
                       </span>
                     ))}
@@ -353,10 +383,9 @@ const postponedProjects = sorted.filter(isPostponed);
                       stroke-linecap="round"
                       stroke-linejoin="round"
                     >
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      <path d="M10 11v6M14 11v6" />
-                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                      <path d="M4 7h16" />
+                      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                      <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
                     </svg>
                     <span>Postponed</span>
                   </span>
@@ -394,7 +423,11 @@ const postponedProjects = sorted.filter(isPostponed);
   }
   .ptable--postponed {
     border-top: none;
-    opacity: 0.7;
+    text-align: left;
+  }
+
+  .ptable--postponed .row-container:last-child {
+    border-bottom: none;
   }
 
   .row-container {
@@ -417,8 +450,15 @@ const postponedProjects = sorted.filter(isPostponed);
 
   /* ---- postponed toggle ---- */
   .postponed {
-    margin-top: 1.25rem;
+    margin-top: 0.4rem;
     text-align: center;
+    position: relative;
+  }
+  .postponed::after {
+    content: "";
+    display: block;
+    margin: 0 var(--phi);
+    border-bottom: 1px solid var(--border);
   }
   .postponed > summary {
     display: inline-flex;
@@ -427,11 +467,12 @@ const postponedProjects = sorted.filter(isPostponed);
     gap: 0.4em;
     padding: 0.25rem 0.5rem;
     font-family: "Inter", sans-serif;
-    font-size: 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 400;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--ink-dim);
-    opacity: 0.4;
+    opacity: 0.55;
     cursor: pointer;
     user-select: none;
     transition: opacity 0.2s ease;
@@ -444,16 +485,17 @@ const postponedProjects = sorted.filter(isPostponed);
     content: "";
   }
   .postponed > summary:hover {
-    opacity: 0.75;
+    opacity: 0.85;
   }
   .postponed .chev {
     width: 10px;
     height: 10px;
     flex-shrink: 0;
     transition: transform 0.2s ease;
+    transform: rotate(180deg);
   }
   .postponed[open] .chev {
-    transform: rotate(180deg);
+    transform: rotate(0deg);
   }
 
   /* ---- status ---- */
