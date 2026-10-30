@@ -241,10 +241,17 @@ const sorted = [...projects].sort((a, b) => {
   const bb = bucketOf(b);
   if (ba !== bb) return ba - bb;
 
+  // Manual `order` wins within a bucket (explicit override).
   if (a.data.order != null && b.data.order != null)
     return a.data.order - b.data.order;
   if (a.data.order != null) return -1;
   if (b.data.order != null) return 1;
+
+  // Then soonest ETA first; undated items sink to the end.
+  // ISO YYYY-MM-DD strings sort correctly with plain string compare.
+  if (a.data.eta && b.data.eta) return a.data.eta < b.data.eta ? -1 : 1;
+  if (a.data.eta) return -1;
+  if (b.data.eta) return 1;
 
   return a.data.title.localeCompare(b.data.title);
 });
@@ -276,7 +283,7 @@ const postponedProjects = sorted.filter(isPostponed);
           <div class={`prow prow--${prime}`}>
             <div class="col-status">
               <div class="statuses">
-                {statuses.map((s) => (
+                {[prime].map((s) => (
                   <span class="status-item">
                     <span class={`status-icon status-icon--${s}`}>
                       {s === "working-on" ? (
@@ -347,7 +354,7 @@ const postponedProjects = sorted.filter(isPostponed);
                       is actively being worked on, AND has a concrete ETA.
                       No ETA → intentionally hidden (punishes vagueness). */}
                   {statuses.includes("working-on") && etaText && (
-                    <span class="btn btn--muted">
+                    <span class="update-note">
                       <span>Updates</span>
                       <svg
                         class="icon"
@@ -630,8 +637,8 @@ const postponedProjects = sorted.filter(isPostponed);
     opacity: 0.85;
   }
   .postponed .chev {
-    width: 10px;
-    height: 10px;
+    width: 13px;
+    height: 13px;
     flex-shrink: 0;
     transition: transform 0.2s ease;
     transform: rotate(180deg);
@@ -805,6 +812,28 @@ const postponedProjects = sorted.filter(isPostponed);
   }
   .btn--muted:hover {
     background: color-mix(in srgb, var(--ink) 16%, transparent);
+  }
+
+  /* "Updates" note: plain text, not a pill. Ships/Planning stay pills
+     because they'll become actions (Use) when the project launches.
+     No background, no padding, muted — so it never competes with Use. */
+  .update-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35em;
+    padding: 0.3rem 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    color: color-mix(in srgb, var(--ink) 78%, transparent);
+    white-space: nowrap;
+  }
+  .update-note .icon {
+    width: 13px;
+    height: 13px;
+    opacity: 0.7;
   }
 
   .icon {
