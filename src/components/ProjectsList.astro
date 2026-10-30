@@ -26,20 +26,67 @@ interface Project {
 }
 
 const DUMMY_PROJECTS: Project[] = [
+  // linked + working-on + eta → "Use" + "Update" pill
   {
     slug: "dummy-ostium",
     data: {
       title: "Ostium",
       description:
         "A minimal personal knowledge manager that lives in your menu bar.",
-      status: "paused",
+      status: "working-on",
       link: "https://example.com",
+      eta: "2026-12-01",
       version: "v1.4.2",
       effort: "high",
       leverage: "high",
       order: 1,
     },
   },
+  // linked + working-on, NO eta → "Use" only (pill punished/hidden)
+  {
+    slug: "dummy-beacon",
+    data: {
+      title: "Beacon",
+      description: "A small status page for personal side projects.",
+      status: "working-on",
+      link: "https://example.com",
+      version: "v0.2.1",
+      effort: "medium",
+      leverage: "medium",
+      order: 2,
+    },
+  },
+  // linked + paused → "Use" only (paused is not working-on)
+  {
+    slug: "dummy-ledger",
+    data: {
+      title: "Ledger",
+      description: "Plain-text expense tracking with no cloud in the loop.",
+      status: "paused",
+      link: "https://example.com",
+      version: "v2.0.0",
+      effort: "medium",
+      leverage: "low",
+      ctaLabel: "Open",
+      order: 3,
+    },
+  },
+  // linked + multi-status [working-on, paused] + eta → Use + pill
+  {
+    slug: "dummy-driftwood",
+    data: {
+      title: "Driftwood",
+      description: "A slow-reader for long articles you saved years ago.",
+      status: ["working-on", "paused"],
+      link: "https://example.com",
+      eta: "2027-02-10",
+      version: "v0.9.0",
+      effort: "low",
+      leverage: "high",
+      order: 4,
+    },
+  },
+  // no link + paused + eta → derived to "planned", shows ETA pill
   {
     slug: "dummy-quiet-hours",
     data: {
@@ -51,9 +98,10 @@ const DUMMY_PROJECTS: Project[] = [
       version: "v0.3.0",
       effort: "low",
       leverage: "medium",
-      order: 2,
+      order: 5,
     },
   },
+  // no link + working-on, no eta → main table, "Planning" bulb
   {
     slug: "dummy-field-notes",
     data: {
@@ -62,31 +110,56 @@ const DUMMY_PROJECTS: Project[] = [
       status: "working-on",
       effort: "medium",
       leverage: "high",
-      order: 3,
+      order: 6,
     },
   },
+  // no link + no eta → falls into "Hidden" section, labeled "Planning"
   {
     slug: "dummy-tide",
     data: {
       title: "Tide",
       description: "Sleep-aware reading companion.",
+      status: "working-on",
+      effort: "low",
+      leverage: "low",
+      order: 7,
+    },
+  },
+  // no link + no eta + paused → "Hidden" section, labeled "Postponed"
+  {
+    slug: "dummy-ashfall",
+    data: {
+      title: "Ashfall",
+      description: "An archive of every sunset I've logged.",
       status: "paused",
       effort: "low",
       leverage: "low",
-      order: 4,
+      order: 8,
     },
   },
+  // bare minimum: title + status only (no desc, version, tags, order)
   {
-    slug: "dummy-beacon",
+    slug: "dummy-placeholder",
     data: {
-      title: "Beacon",
-      description: "A small status page for personal side projects.",
+      title: "Placeholder",
+      status: "planned",
+    },
+  },
+  // long title + long description, to stress layout wrapping
+  {
+    slug: "dummy-long",
+    data: {
+      title: "A Very Long Project Name That Wraps",
+      description:
+        "This description is intentionally long to check whether the max-width of forty-five characters actually holds up under realistic writing, and whether the row height grows gracefully without breaking the grid columns next to it.",
       status: "working-on",
       link: "https://example.com",
-      version: "v0.2.1",
-      effort: "medium",
-      leverage: "medium",
-      order: 5,
+      eta: "2026-10-30",
+      version: "v10.11.12",
+      effort: "high",
+      leverage: "low",
+      ctaLabel: "Try it",
+      order: 9,
     },
   },
 ];
@@ -129,27 +202,38 @@ const levelLabel = (level: Level, kind: "effort" | "leverage") =>
   `${level.charAt(0).toUpperCase()}${level.slice(1)} ${kind}`;
 
 // -------- humane eta --------
+// Always show the exact day. Add a compact two-digit year only when the
+// date falls outside the current year ("Feb 10 '27"). Keeps the pill short.
 const formatEta = (raw: string): string => {
   const d = new Date(raw);
   if (isNaN(d.getTime())) return raw;
   const now = new Date();
-  const withinYear = d.getTime() - now.getTime() < 1000 * 60 * 60 * 24 * 365;
-  const sameYear = d.getFullYear() === now.getFullYear();
-  if (withinYear || sameYear) {
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  }
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const md = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (d.getFullYear() === now.getFullYear()) return md;
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${md} '${yy}`;
 };
 
 // -------- sort --------
-// Bucket priority: has link → has eta (no link) → working-on → rest.
+// Bucket priority:
+//   0: link + working-on + eta  → Use + Update pill (highest intent)
+//   1: link + working-on        → Use, actively in progress, no date
+//   2: link                     → Use, not active
+//   3: eta only (no link)       → ETA pill
+//   4: working-on only          → Planning bulb
+//   5: rest                     → Hidden / Postponed
 // Within a bucket, honor manual `order` if present, else alphabetical.
 const bucketOf = (p: Project): number => {
-  if (p.data.link) return 0;
-  if (p.data.eta) return 1;
   const statuses = effectiveStatuses(p);
-  if (statuses.includes("working-on")) return 2;
-  return 3;
+  const isWorking = statuses.includes("working-on");
+  if (p.data.link) {
+    if (isWorking && p.data.eta) return 0;
+    if (isWorking) return 1;
+    return 2;
+  }
+  if (p.data.eta) return 3;
+  if (isWorking) return 4;
+  return 5;
 };
 
 const sorted = [...projects].sort((a, b) => {
@@ -248,18 +332,42 @@ const postponedProjects = sorted.filter(isPostponed);
 
             <div class="col-action">
               {project.data.link ? (
-                <a
-                  class="btn btn--dark"
-                  href={project.data.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onclick="event.stopPropagation();"
-                >
-                  <span>{project.data.ctaLabel ?? "Use"}</span>
-                  <span class="arrow">&rarr;</span>
-                </a>
+                <>
+                  <a
+                    class="btn btn--dark"
+                    href={project.data.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onclick="event.stopPropagation();"
+                  >
+                    <span>{project.data.ctaLabel ?? "Use"}</span>
+                    <span class="arrow">&rarr;</span>
+                  </a>
+                  {/* "Update" pill: only when the project has a live surface,
+                      is actively being worked on, AND has a concrete ETA.
+                      No ETA → intentionally hidden (punishes vagueness). */}
+                  {statuses.includes("working-on") && etaText && (
+                    <span class="btn btn--muted">
+                      <span>Updates</span>
+                      <svg
+                        class="icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                      </svg>
+                      <span>{etaText}</span>
+                    </span>
+                  )}
+                </>
               ) : etaText ? (
                 <span class="btn btn--muted">
+                  <span>Ships</span>
                   <svg
                     class="icon"
                     viewBox="0 0 24 24"
@@ -474,7 +582,9 @@ const postponedProjects = sorted.filter(isPostponed);
 
   .prow {
     display: grid;
-    grid-template-columns: 1fr 2.618fr 1.618fr;
+    /* fixed action column: prevents long buttons (e.g. "Updates 🕐 Feb 10 '27")
+       from widening that row's column and shifting the title column vs other rows */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2.618fr) minmax(calc(var(--phi) * 7), 1.618fr);
     align-items: center;
     gap: var(--phi);
     padding: var(--phi) var(--phi);
@@ -655,8 +765,9 @@ const postponedProjects = sorted.filter(isPostponed);
   /* ---- action ---- */
   .col-action {
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
   }
 
   .btn {
@@ -672,6 +783,9 @@ const postponedProjects = sorted.filter(isPostponed);
     line-height: 1;
     text-decoration: none;
     border: none;
+    /* keep the pill on one line no matter how long the date string is
+       (e.g. "Updates 🕐 Feb 2027"); prevents tall/lopsided buttons */
+    white-space: nowrap;
     transition:
       opacity 0.2s ease,
       background-color 0.2s ease;
@@ -703,7 +817,7 @@ const postponedProjects = sorted.filter(isPostponed);
   @media (max-width: 600px) {
     .prow {
       grid-template-columns: 1fr;
-      padding: var(--phi) var(--phi-s);
+      padding: var(--phi) calc(var(--phi) * 1.25);
     }
     .btn {
       width: 100%;
