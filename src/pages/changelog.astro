@@ -1,0 +1,269 @@
+---
+// Site changelog page. Renders CHANGELOG.md via a raw import + the same
+// parse logic used on /projects-releases. If this parser grows, extract it
+// to lib/changelog.ts and import from both places.
+import changelogMd from "../../CHANGELOG.md?raw";
+
+interface Section { name: string; items: string[]; }
+interface Entry {
+  version: string;
+  date: string | null;
+  sections: Section[];
+}
+
+function parseChangelog(md: string): Entry[] {
+  const clean = md.replace(/<!--[\s\S]*?-->/g, "");
+  const entries: Entry[] = [];
+  let current: Entry | null = null;
+  let section: Section | null = null;
+
+  for (const raw of clean.split("\n")) {
+    const line = raw.trimEnd();
+
+    const h2 = line.match(/^##\s+(.+)$/);
+    if (h2) {
+      const rawVer = h2[1].trim();
+      const m = rawVer.match(/^\[?([^\]]+)\]?\s*(?:[-–—]\s*(\d{4}-\d{2}-\d{2}))?/);
+      const version = m?.[1]?.trim() ?? rawVer;
+      const date = m?.[2] ?? null;
+      current = { version, date, sections: [] };
+      entries.push(current);
+      section = null;
+      continue;
+    }
+
+    const h3 = line.match(/^###\s+(.+)$/);
+    if (h3 && current) {
+      section = { name: h3[1].trim(), items: [] };
+      current.sections.push(section);
+      continue;
+    }
+
+    const bullet = line.match(/^[\s]*[-*+]\s+(.+)$/);
+    if (bullet && section) {
+      section.items.push(bullet[1].trim());
+    }
+  }
+
+  return entries;
+}
+
+function formatVersion(ver: string): string {
+  return /^v/i.test(ver) ? ver : `v${ver}`;
+}
+
+function formatHumaneDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-");
+  if (!y || !m || !d) return dateStr;
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  return `${months[parseInt(m, 10) - 1]} ${parseInt(d, 10)}, ${y}`;
+}
+
+const entries = parseChangelog(changelogMd);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Changelog — Rohanshu</title>
+
+    <script is:inline>
+      (function () {
+        const saved = localStorage.getItem("theme-preference");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (saved === "dark" || (!saved && prefersDark)) {
+          document.documentElement.classList.add("dark-mode");
+        }
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --bg: #fbfbf9;
+        --ink: #2d2c2a;
+        --ink-dim: #737169;
+        --border: #e8e6e1;
+        --right-bg: #f2f0eb;
+      }
+      html.dark-mode {
+        --bg: #0e0d0b;
+        --ink: #e8e2d6;
+        --ink-dim: #7a7060;
+        --border: #2a2820;
+        --right-bg: #151410;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Inter", sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        transition: background 0.4s ease, color 0.4s ease;
+      }
+
+      .container {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 3.5rem 1.25rem 6rem;
+      }
+
+      .header-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+      }
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--ink-dim);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.3rem 0.6rem;
+        margin-left: -0.6rem;
+        border-radius: 6px;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+      .back:hover { color: var(--ink); background: var(--right-bg); }
+
+      .theme-toggle {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--ink-dim);
+        padding: 0.45rem;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+      .theme-toggle:hover { color: var(--ink); background: var(--right-bg); }
+      #sun-icon { display: none; }
+      html.dark-mode #sun-icon { display: block; }
+      html.dark-mode #moon-icon { display: none; }
+
+      h1 {
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(2.6rem, 6vw, 4rem);
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        margin-bottom: 3.5rem;
+      }
+
+      .entry {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 1.5rem;
+        padding: 1.5rem 0;
+        border-top: 1px solid var(--border);
+      }
+      .entry:last-child { border-bottom: 1px solid var(--border); }
+
+      .entry-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .entry-date {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+      .entry-version {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .entry-body { display: flex; flex-direction: column; gap: 1rem; }
+      .section-tag {
+        display: block;
+        font-size: 0.7rem;
+        font-style: italic;
+        letter-spacing: 0.04em;
+        text-transform: lowercase;
+        color: var(--ink-dim);
+        margin-bottom: 0.25rem;
+        opacity: 0.85;
+      }
+      ul.items { list-style: disc; padding-left: 1.1rem; }
+      ul.items li {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--ink);
+        margin-bottom: 0.2rem;
+      }
+      ul.items li::marker { color: var(--ink-dim); }
+
+      @media (max-width: 560px) {
+        .entry { grid-template-columns: 1fr; gap: 0.5rem; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <header class="header-nav">
+        <a href="/" class="back">
+          <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> back
+        </a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+          <i data-lucide="sun" id="sun-icon" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="moon" id="moon-icon" style="width: 16px; height: 16px;"></i>
+        </button>
+      </header>
+
+      <main>
+        <h1>Changelog</h1>
+
+        {entries.map((e) => (
+          <article class="entry">
+            <div class="entry-meta">
+              {e.date && <span class="entry-date">{formatHumaneDate(e.date)}</span>}
+              <span class="entry-version">{formatVersion(e.version)}</span>
+            </div>
+            <div class="entry-body">
+              {e.sections.map((s) => (
+                <div>
+                  <span class="section-tag">{s.name}</span>
+                  <ul class="items">
+                    {s.items.map((item) => <li>{item}</li>)}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </main>
+    </div>
+
+    <script is:inline>
+      lucide.createIcons();
+      const themeToggle = document.getElementById("theme-toggle");
+      themeToggle.addEventListener("click", () => {
+        const isDark = document.documentElement.classList.toggle("dark-mode");
+        localStorage.setItem("theme-preference", isDark ? "dark" : "light");
+      });
+    </script>
+  </body>
+</html>
