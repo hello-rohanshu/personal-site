@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
+## [1.4.0] — 2026-10-01
+### Added
+- Projects releases page with a unified changelog timeline
+
+### Changed
+- Replace default favicon with site icon; remove inline favicon links from pages
+- Underline links in More section and rename labels
+- Update homepage links section to point to the releases page
+
 ## [1.3.0] — 2026-09-24
 ### Added
 Project documentation:
