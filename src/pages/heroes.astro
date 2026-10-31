@@ -1,0 +1,381 @@
+---
+const SADHGURU = { 
+  name: "Sadhguru", 
+  epithet: "God in human form",
+  image: "/sadhguru.png"
+};
+const BUCKY = { 
+  name: "Buckminster Fuller", 
+  epithet: "Human in human form",
+  image: "/buckminster-fuller.png"
+};
+const ME = { 
+  name: "Me", 
+  epithet: "Animal in human form"
+};
+
+// Only #3 is visible. The rest are just names.
+const OTHERS = [
+  { name: "Seth Godin", rank: 3 },
+  { name: "Steven Pressfield" },
+  { name: "David Allen" },
+  { name: "Simon Sinek" },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Heroes — Rohanshu</title>
+
+    <script is:inline>
+      (function () {
+        const saved = localStorage.getItem("theme-preference");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (saved === "dark" || (!saved && prefersDark)) {
+          document.documentElement.classList.add("dark-mode");
+        }
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --bg: #fbfbf9;
+        --ink: #2d2c2a;
+        --ink-dim: #737169;
+        --border: #e8e6e1;
+        --right-bg: #f2f0eb;
+      }
+      html.dark-mode {
+        --bg: #0e0d0b;
+        --ink: #e8e2d6;
+        --ink-dim: #7a7060;
+        --border: #2a2820;
+        --right-bg: #151410;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Inter", sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        transition: background 0.4s ease, color 0.4s ease;
+      }
+
+      .container {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 3.5rem 1.25rem 6rem;
+      }
+
+      /* ── Nav ── */
+      .header-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+      }
+      .back {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        color: var(--ink-dim); text-decoration: none; font-size: 0.85rem;
+        font-weight: 500; padding: 0.3rem 0.6rem; margin-left: -0.6rem;
+        border-radius: 6px; transition: color 0.15s ease, background 0.15s ease;
+      }
+      .back:hover { color: var(--ink); background: var(--right-bg); }
+      .theme-toggle {
+        background: none; border: none; cursor: pointer; color: var(--ink-dim);
+        padding: 0.45rem; border-radius: 6px; display: inline-flex;
+        align-items: center; justify-content: center;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+      .theme-toggle:hover { color: var(--ink); background: var(--right-bg); }
+      #sun-icon { display: none; }
+      html.dark-mode #sun-icon { display: block; }
+      html.dark-mode #moon-icon { display: none; }
+
+      h1 {
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(2.6rem, 6vw, 4rem);
+        font-weight: 600; line-height: 1; letter-spacing: -0.02em;
+        margin-bottom: 4rem;
+      }
+
+      /* ── Constellation (The Top 3) ── */
+      .constellation {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        align-items: start;
+        text-align: center;
+        margin-bottom: 5rem;
+        padding-top: 1rem;
+      }
+
+      /* The horizontal line connecting them */
+      .constellation::before {
+        content: '';
+        position: absolute;
+        top: 3.25rem; /* Aligns with the center of the 72px avatars */
+        left: 16%;
+        right: 16%;
+        height: 1px;
+        background: var(--border);
+        z-index: 0;
+      }
+
+      /* The pulse dot */
+      .pulse {
+        position: absolute;
+        top: 3.15rem; 
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--ink);
+        z-index: 1;
+        animation: travel 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+
+      @keyframes travel {
+        0% { right: 16%; opacity: 0; transform: scale(1); }
+        10% { opacity: 1; transform: scale(1); }
+        50% { transform: scale(1.5); }
+        90% { opacity: 1; transform: scale(1); }
+        100% { right: 84%; opacity: 0; transform: scale(1); }
+      }
+
+      .node {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      /* Wrapper around the avatar so the rank badge can anchor to its NW corner */
+      .node-avatar-wrap {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 0.25rem;
+      }
+
+      .node-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        filter: grayscale(100%);
+        transition: filter 0.3s ease;
+        display: block;
+      }
+
+      .node:hover .node-avatar { filter: grayscale(0%); }
+
+      /* The solid dot for "Me" */
+      .me-dot-wrapper {
+        width: 72px;
+        height: 72px;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .me-dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--ink);
+      }
+
+      .node-name {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.4rem;
+        font-weight: 600;
+        line-height: 1.1;
+        position: relative;
+        display: inline-block;
+      }
+
+      .node-epithet {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--ink-dim);
+      }
+
+      /* ── Rankings (circular emblems) ── */
+      .rank {
+        border-radius: 50%;
+        display: inline-grid;
+        align-items: center;
+        justify-content: center;
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1;
+      }
+      .rank.gold   { background: #d4af37; }
+      .rank.silver { background: #a0a0a0; }
+      .rank.bronze { background: #cd7f32; }
+
+      /* Badge on the NW corner of the profile avatar */
+      .rank.on-avatar {
+        position: absolute;
+        top: -0.3rem;
+        left: -0.99rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 0.65rem;
+        /* ring matches page background to lift badge off the photo edge */
+        border: 2px solid var(--bg);
+      }
+
+      /* Badge beside a name (used for Seth Godin) */
+      .rank.on-name {
+        position: absolute;
+        top: -0.3rem;
+        left: -1.9rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 0.65rem;
+        border: 2px solid var(--bg);
+      }
+
+      /* ── The Others ── */
+      .others-title {
+        font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.2em;
+        color: var(--ink-dim); margin-bottom: 1.5rem; display: block;
+        text-align: center;
+      }
+
+      .hero-list { 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center;
+      }
+      
+      .hero {
+        padding: 1.25rem 0; 
+        border-top: 1px solid var(--border);
+        width: 100%;
+        text-align: center;
+      }
+      .hero:last-child { border-bottom: 1px solid var(--border); }
+
+      .hero-name {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.4rem; font-weight: 600; line-height: 1.1;
+        color: var(--ink); text-decoration: none;
+        position: relative;
+        display: inline-block;
+      }
+
+      /* ── Mobile ── */
+      @media (max-width: 600px) {
+        h1 { margin-bottom: 2.5rem; }
+        .constellation {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+          padding-top: 0;
+        }
+        .constellation::before, .pulse {
+          display: none;
+        }
+        .node { align-items: flex-start; text-align: left; }
+        .node-avatar { width: 56px; height: 56px; }
+        .me-dot-wrapper { height: 56px; justify-content: flex-start; }
+        .hero-list { align-items: flex-start; }
+        .hero { text-align: left; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <header class="header-nav">
+        <a href="/" class="back">
+          <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> back
+        </a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+          <i data-lucide="sun" id="sun-icon" style="width: 16px; height: 16px;"></i>
+          <i data-lucide="moon" id="moon-icon" style="width: 16px; height: 16px;"></i>
+        </button>
+      </header>
+
+      <main>
+        <h1>Heroes</h1>
+
+        <!-- Constellation -->
+        <div class="constellation">
+          <div class="pulse"></div>
+          
+          <div class="node">
+            <div class="node-avatar-wrap">
+              <img src={SADHGURU.image} alt={SADHGURU.name} class="node-avatar" />
+              <span class="rank gold on-avatar">#1</span>
+            </div>
+            <span class="node-name">{SADHGURU.name}</span>
+            <span class="node-epithet">{SADHGURU.epithet}</span>
+          </div>
+          
+          <div class="node">
+            <div class="node-avatar-wrap">
+              <img src={BUCKY.image} alt={BUCKY.name} class="node-avatar" />
+              <span class="rank silver on-avatar">#2</span>
+            </div>
+            <span class="node-name">{BUCKY.name}</span>
+            <span class="node-epithet">{BUCKY.epithet}</span>
+          </div>
+          
+          <div class="node">
+            <div class="me-dot-wrapper">
+              <div class="me-dot"></div>
+            </div>
+            <span class="node-name">{ME.name}</span>
+            <span class="node-epithet">{ME.epithet}</span>
+          </div>
+        </div>
+
+        <!-- The Others -->
+        <span class="others-title">The Others</span>
+        <div class="hero-list">
+          {OTHERS.map((h) => (
+            <article class="hero">
+              <span class="hero-name">
+                {h.rank && (
+                  <span class={`rank on-name ${h.rank === 1 ? "gold" : h.rank === 2 ? "silver" : h.rank === 3 ? "bronze" : ""}`}>
+                    #{h.rank}
+                  </span>
+                )}
+                {h.name}
+              </span>
+            </article>
+          ))}
+        </div>
+      </main>
+    </div>
+
+    <script is:inline>
+      lucide.createIcons();
+      const themeToggle = document.getElementById("theme-toggle");
+      themeToggle.addEventListener("click", () => {
+        const isDark = document.documentElement.classList.toggle("dark-mode");
+        localStorage.setItem("theme-preference", isDark ? "dark" : "light");
+      });
+    </script>
+  </body>
+</html>
