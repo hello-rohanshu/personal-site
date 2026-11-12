@@ -1,0 +1,39 @@
+backend:
+  name: github
+  repo: hello-rohanshu/selfscope
+  branch: next-release
+
+media_folder: public/uploads
+public_folder: /uploads
+
+collections:
+  - name: projects
+    label: Projects
+    folder: src/content/projects
+    create: true
+    format: frontmatter
+    slug: '{{slug}}'
+    fields:
+      - { label: Title,       name: title,       widget: string }
+      - { label: Description, name: description, widget: text, required: false }
+      - label: Status
+        name: status
+        widget: select
+        options: [working-on, paused, planned]
+      - { label: ETA,         name: eta,         widget: string, required: false }
+      - { label: Link,        name: link,        widget: string, required: false }
+      - { label: Role,        name: role,        widget: string, required: false }
+      - { label: Order,       name: order,       widget: number, required: false }
+      - { label: CTA Label,   name: ctaLabel,    widget: string, required: false }
+      - { label: Changelog,   name: changelog,   widget: string, required: false }
+      - label: Effort
+        name: effort
+        widget: select
+        options: [high, medium, low]
+        required: false
+      - label: Leverage
+        name: leverage
+        widget: select
+        options: [high, medium, low]
+        required: false
+      - { label: Visible,     name: visible,     widget: boolean, default: true }
