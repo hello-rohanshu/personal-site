@@ -22,6 +22,8 @@ interface Project {
     version?: string;
     effort?: Level;
     leverage?: Level;
+    visible?: boolean;
+    changelog?: string;
   };
 }
 
@@ -40,6 +42,8 @@ const DUMMY_PROJECTS: Project[] = [
       effort: "high",
       leverage: "high",
       order: 1,
+      visible: false,
+      changelog: "https://example.com/changelog",
     },
   },
   // linked + working-on, NO eta → "Use" only (pill punished/hidden)
@@ -54,6 +58,8 @@ const DUMMY_PROJECTS: Project[] = [
       effort: "medium",
       leverage: "medium",
       order: 2,
+      visible: true,
+      changelog: "",
     },
   },
   // linked + paused → "Use" only (paused is not working-on)
@@ -69,6 +75,8 @@ const DUMMY_PROJECTS: Project[] = [
       leverage: "low",
       ctaLabel: "Open",
       order: 3,
+      visible: true,
+      changelog: "https://example.com/changelog",
     },
   },
   // linked + multi-status [working-on, paused] + eta → Use + pill
@@ -84,6 +92,8 @@ const DUMMY_PROJECTS: Project[] = [
       effort: "low",
       leverage: "high",
       order: 4,
+      visible: true,
+      changelog: "https://example.com/changelog",
     },
   },
   // no link + paused + eta → derived to "planned", shows ETA pill
@@ -99,6 +109,8 @@ const DUMMY_PROJECTS: Project[] = [
       effort: "low",
       leverage: "medium",
       order: 5,
+      visible: true,
+      changelog: "",
     },
   },
   // no link + working-on, no eta → main table, "Planning" bulb
@@ -111,6 +123,8 @@ const DUMMY_PROJECTS: Project[] = [
       effort: "medium",
       leverage: "high",
       order: 6,
+      visible: true,
+      changelog: "",
     },
   },
   // no link + no eta → falls into "Hidden" section, labeled "Planning"
@@ -123,6 +137,8 @@ const DUMMY_PROJECTS: Project[] = [
       effort: "low",
       leverage: "low",
       order: 7,
+      visible: true,
+      changelog: "",
     },
   },
   // no link + no eta + paused → "Hidden" section, labeled "Postponed"
@@ -135,6 +151,8 @@ const DUMMY_PROJECTS: Project[] = [
       effort: "low",
       leverage: "low",
       order: 8,
+      visible: true,
+      changelog: "",
     },
   },
   // bare minimum: title + status only (no desc, version, tags, order)
@@ -143,6 +161,8 @@ const DUMMY_PROJECTS: Project[] = [
     data: {
       title: "Placeholder",
       status: "planned",
+      visible: true,
+      changelog: "",
     },
   },
   // long title + long description, to stress layout wrapping
@@ -160,6 +180,8 @@ const DUMMY_PROJECTS: Project[] = [
       leverage: "low",
       ctaLabel: "Try it",
       order: 9,
+      visible: true,
+      changelog: "https://example.com/changelog",
     },
   },
 ];
@@ -236,7 +258,12 @@ const bucketOf = (p: Project): number => {
   return 5;
 };
 
-const sorted = [...projects].sort((a, b) => {
+// `visible: false` drops the project entirely — it won't appear in the
+// main table nor in the "Hidden" (postponed) section. Missing `visible`
+// is treated as visible so older entries aren't accidentally hidden.
+const visibleProjects = projects.filter((p) => p.data.visible !== false);
+
+const sorted = [...visibleProjects].sort((a, b) => {
   const ba = bucketOf(a);
   const bb = bucketOf(b);
   if (ba !== bb) return ba - bb;
