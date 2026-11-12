@@ -1,5 +1,5 @@
 ---
-import { getNotionProjects } from "../lib/notionProjects";
+import { getCollection } from "astro:content";
 import Favicon from "../components/Favicon.astro";
 
 interface Section { name: string; items: string[]; }
@@ -11,6 +11,18 @@ interface Entry {
   domain?: string;
 }
 interface FlatEntry extends Entry { gapDays?: number; }
+
+// Extracts the bare domain (e.g. "github.com") from a URL.
+// Used for the favicon, which is currently commented out below,
+// but kept here so it's ready when you turn it back on.
+function extractDomain(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
 
 function parseChangelog(md: string, project: string, domain?: string): Entry[] {
   const clean = md.replace(/<!--[\s\S]*?-->/g, "");
@@ -81,7 +93,7 @@ function formatHumaneDate(dateStr: string): string {
   return `${month} ${day}`;
 }
 
-const projects = await getNotionProjects();
+const projects = await getCollection("projects");
 const withChangelog = projects.filter((p) => p.data.changelog);
 
 const all: Entry[] = (
@@ -95,7 +107,7 @@ const all: Entry[] = (
         const res = await fetch(rawUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const md = await res.text();
-        return parseChangelog(md, p.data.title, p.data.domain);
+        return parseChangelog(md, p.data.title, extractDomain(p.data.link || p.data.changelog));
       } catch (e: any) {
         console.warn(`[timeline] ${p.data.title}: ${e.message}`);
         return [];
