@@ -1,10 +1,10 @@
 ---
-import { getNotionProjects, type NormalizedProject } from "../../lib/notionProjects";
+import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
-  const projects = await getNotionProjects();
+  const projects = await getCollection("projects");
   return projects.map((project) => ({
-    params: { slug: project.slug },
+    params: { slug: project.id },
     props: { project },
   }));
 }
@@ -13,11 +13,9 @@ const { project } = Astro.props;
 const projectData = project.data;
 
 const STATUS_LABEL: Record<string, string> = {
-  live: "Live",
-  building: "Building",
-  planned: "Planned",
+  "working-on": "Working on",
   paused: "Paused",
-  archived: "Archived",
+  planned: "Planned",
 };
 
 const normalizeStatus = (s: string | string[]) => (Array.isArray(s) ? s : [s]);
@@ -58,13 +56,13 @@ const statuses = normalizeStatus(projectData.status);
 
         {projectData.link && (
           <a href={projectData.link} class="use-btn" target="_blank" rel="noopener noreferrer">
-            Visit Project &rarr;
+            {projectData.ctaLabel ?? "Visit Project"} &rarr;
           </a>
         )}
       </header>
 
       <footer class="project-footer">
-        <a href="/" class="back-link">← Back to projects</a>
+        <a href="/" class="back-link">&larr; Back to projects</a>
       </footer>
     </main>
   </body>
@@ -116,11 +114,8 @@ const statuses = normalizeStatus(projectData.status);
     border-radius: 50%;
     display: inline-block;
   }
-  .dot--live {
+  .dot--working-on {
     background: #4caf74;
-  }
-  .dot--building {
-    background: #d4a84b;
     animation: pulse 2.2s ease-in-out infinite;
   }
   .dot--paused {
@@ -130,9 +125,6 @@ const statuses = normalizeStatus(projectData.status);
   .dot--planned {
     background: var(--ink-dim);
     opacity: 0.2;
-  }
-  .dot--archived {
-    background: var(--border);
   }
 
   @keyframes pulse {
