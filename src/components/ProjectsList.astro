@@ -3,7 +3,7 @@
 // DUMMY DATA (temporary — UI iteration only)
 // Set USE_DUMMY = false to consume real (Notion-fed) props.
 // ============================================================
-const USE_DUMMY = true;
+const USE_DUMMY = false;
 
 type StatusValue = "working-on" | "paused" | "planned";
 type Level = "high" | "medium" | "low";
@@ -186,8 +186,15 @@ const DUMMY_PROJECTS: Project[] = [
   },
 ];
 
+import { getCollection } from 'astro:content';
+
 const propProjects = (Astro.props as { projects?: Project[] }).projects;
-const projects: Project[] = USE_DUMMY ? DUMMY_PROJECTS : (propProjects ?? []);
+const collectionEntries = await getCollection('projects');
+const realProjects: Project[] = collectionEntries.map((entry) => ({
+  slug: entry.id,
+  data: entry.data,
+}));
+const projects: Project[] = USE_DUMMY ? DUMMY_PROJECTS : (propProjects ?? realProjects);
 
 // -------- status --------
 const STATUS_ORDER: Record<string, number> = {

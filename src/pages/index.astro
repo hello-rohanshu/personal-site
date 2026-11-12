@@ -1,8 +1,13 @@
 ---
-import { getNotionProjects } from "../lib/notionProjects";
+import { getCollection } from "astro:content";
 import ProjectsList from "../components/ProjectsList.astro";
 
-const projects = await getNotionProjects();
+// Fetch projects from the local Sveltia-managed markdown files
+const collectionEntries = await getCollection("projects");
+const projects = collectionEntries.map((entry) => ({
+    slug: entry.id,
+    data: entry.data,
+}));
 ---
 
 <!doctype html>
