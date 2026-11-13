@@ -14,18 +14,20 @@ collections:
     format: frontmatter
     slug: '{{slug}}'
     fields:
+      # --- Core Details ---
       - { label: Title,       name: title,       widget: string }
+      - { label: Visible,     name: visible,     widget: boolean, default: true }
       - { label: Description, name: description, widget: text, required: false }
       - label: Status
         name: status
         widget: select
         options: [working-on, paused, planned]
-      - { label: ETA,         name: eta,         widget: string, required: false }
-      - { label: Link,        name: link,        widget: string, required: false }
-      - { label: Role,        name: role,        widget: string, required: false }
-      - { label: Order,       name: order,       widget: number, required: false }
-      - { label: CTA Label,   name: ctaLabel,    widget: string, required: false }
-      - { label: Changelog,   name: changelog,   widget: string, required: false }
+      - label: ETA
+        name: eta
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        required: false
       - label: Effort
         name: effort
         widget: select
@@ -36,4 +38,20 @@ collections:
         widget: select
         options: [high, medium, low]
         required: false
-      - { label: Visible,     name: visible,     widget: boolean, default: true }
+
+      # --- Links & Actions ---
+      - label: Link
+        name: link
+        widget: string
+        required: false
+        pattern: ['^https?://', 'Must start with http:// or https://']
+      - label: Changelog
+        name: changelog
+        widget: string
+        required: false
+        pattern: ['^https?://', 'Must start with http:// or https://']
+      - { label: CTA Label,   name: ctaLabel,    widget: string, required: false }
+
+      # --- Metadata ---
+      - { label: Role,        name: role,        widget: string, required: false }
+      - { label: Order,       name: order,       widget: number, required: false }

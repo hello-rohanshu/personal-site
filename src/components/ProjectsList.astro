@@ -381,7 +381,7 @@ const postponedProjects = sorted.filter(isPostponed);
                     rel="noopener noreferrer"
                     onclick="event.stopPropagation();"
                   >
-                    <span>{project.data.ctaLabel ?? "Use"}</span>
+                    <span>{project.data.ctaLabel || "Use"}</span>
                     <span class="arrow">&rarr;</span>
                   </a>
                   {/* "Update" pill: only when the project has a live surface,
