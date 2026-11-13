@@ -1,10 +1,14 @@
 ---
 title: Buckminster Fuller Discord Server
+visible: true
+description: A place to play the World Game, or discuss favorite movies
+status: paused
+eta: ''
 effort: low
 leverage: medium
-ctaLabel: Join
-description: A place to play the World Game, or discuss favorite movies
 link: https://discord.gg/hy7FvaugXn
-status: paused
-visible: false
+changelog: ''
+ctaLabel: Join
+role: ''
+order: null
 ---
