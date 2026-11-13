@@ -107,7 +107,7 @@ const all: Entry[] = (
         const res = await fetch(rawUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const md = await res.text();
-        return parseChangelog(md, p.data.title, extractDomain(p.data.link || p.data.changelog));
+        return parseChangelog(md, p.data.title, extractDomain(p.data.link));
       } catch (e: any) {
         console.warn(`[timeline] ${p.data.title}: ${e.message}`);
         return [];
